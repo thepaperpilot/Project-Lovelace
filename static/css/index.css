@@ -1,0 +1,60 @@
+.blackout {
+	position: absolute;
+	top: 20px;
+	bottom: 20px;
+	right: 0;
+	left: 0;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	flex-direction: column;
+}
+
+.title {
+	font-size: x-large;
+}
+
+.middle {
+	padding: 8px;
+	border: solid black 4px;
+	width: 80%;
+	max-width: 400px;
+}
+
+.log {
+	flex-grow: 1;
+	background: black;
+	overflow: auto;
+	max-height: calc(100% - 5.5em - 16px);
+}
+
+.input {
+	color: white;
+}
+
+.input::before {
+	content: ">";
+	position: relative;
+	top: -1px;
+}
+
+.input input {
+	background: none;
+	border: none;
+	color: white;
+	font-size: medium;
+	margin-top: 2px;
+	width: calc(100% - 1em);
+}
+
+.stdin {
+	color: chartreuse;
+}
+
+.stdout {
+	color: white;
+}
+
+.error {
+	background: red;
+}
