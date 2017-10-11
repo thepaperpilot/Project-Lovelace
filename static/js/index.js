@@ -1,7 +1,10 @@
 let socket = io();
 
+let panel = document.getElementById('panel')
 let log = document.getElementById('log')
 let input = document.getElementById('input')
+let openDrawer = document.getElementById('open-drawer')
+let closeDrawer = document.getElementById('close-drawer')
 
 socket.on('connect', () => {
 	input.className = 'middle input'
@@ -24,6 +27,14 @@ input.addEventListener('submit', function (e) {
 	appendToLog(input.value, "stdin")
 	socket.emit('stdin', input.value)
 	input.value = ''
+})
+
+openDrawer.addEventListener('click', function () {
+	panel.className = 'card'
+})
+
+closeDrawer.addEventListener('click', function () {
+	panel.className = 'card hidden'
 })
 
 function appendToLog(string, className) {
