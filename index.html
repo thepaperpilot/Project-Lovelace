@@ -7,9 +7,8 @@
 <link rel="stylesheet" type="text/css" href="css/index.css">
 <body style="margin: 0; background-color: #2a323d;">
   <span class="title">Project Lovelace</span>
-  <span class="open-drawer" id="open-drawer">LOG</span>
-  <div class="card hidden" id="panel">
-    <div id="close-drawer" class="close-drawer">X</div>
+  <div class="panel hidden" id="panel">
+    <div id="toggle-drawer" class="toggle-drawer">LOG</div>
     <div id="log" class="middle log">
     </div>
     <form id="input" class="middle input error" disabled>
@@ -17,6 +16,30 @@
     </form>
   </div>
   <script src="/socket.io/socket.io.js"></script>
+  <script src="js/handlebars-latest.js"></script>
+  <script id="comp_template" type="text/mustache">
+    <div id="comp {{id}}" class="comp {{class}}">
+      <p class="compName">{{name}}</p>
+      {{> (lookup . 'class') }}
+    </div>
+  </script>
+  <script id="ac_template" type="text/mustache">
+    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+  </script>
+  <script id="boiler_template" type="text/mustache">
+    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+  </script>
+  <script id="condenser_template" type="text/mustache">
+    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+  </script>
+  <script id="fan_template" type="text/mustache">
+    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+    <p id="comp {{id}} currSpeed">Current Speed: {{currSpeed}}</p>
+    <a id="comp {{id}} on" class="action">{{on}}</a>
+  </script>
+  <script id="sensor_template" type="text/mustache">
+    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+  </script>
   <script src="js/index.js"></script>
 </body>
 <html>

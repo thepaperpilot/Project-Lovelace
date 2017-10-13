@@ -1,4 +1,12 @@
-.card {
+a:active, a:hover {
+    outline: 0;
+}
+
+p {
+	margin: 8px 0 0 0;
+}
+
+.panel {
 	background-color: #242a33;
     color: #fff;
     box-shadow: 2px 2px 3px #222;
@@ -11,28 +19,22 @@
     bottom: 0;
     z-index: 2;
     transition: all ease-in .5s;
-    width: 20%;
-    right: 80%;
+    width: 400px;
+    left: 0;
 }
 
 .hidden {
-	right: 100%;
+	left: -400px;
 }
 
-.open-drawer {
+.toggle-drawer {
 	position: absolute;
-	top: 16px;
-	left: 16px;
+	top: 0;
+	left: 100%;
+	cursor: pointer;
+	background-color: #242a33;
+	padding: 16px;
 	font-size: x-large;
-	color: white;
-	cursor: pointer;
-}
-
-.close-drawer {
-	position: absolute;
-	top: 8px;
-	right: 8px;
-	cursor: pointer;
 }
 
 .title {
@@ -40,16 +42,18 @@
 	color: white;
 	width: 100%;
 	text-align: center;
-	position: absolute;
 	padding: 16px 0;
 	background: #333c4a;
 	box-shadow: 0 2px 3px #222;
+	display: block;
+	margin-bottom: 16px;
 }
 
 .log {
 	flex-grow: 1;
 	overflow: auto;
 	height: calc(100% - 1em);
+	font-family: Courier;
 }
 
 .input {
@@ -81,4 +85,70 @@
 
 .error {
 	background: red;
+}
+
+.comp {
+	width: 90%;
+	max-width: 940px;
+	color: #fff;
+    background-color: #242a33;
+	box-shadow: 2px 2px 3px #222;
+	border-radius: 2px;
+	padding: 16px;
+	margin: auto;
+	margin-bottom: 16px;
+}
+
+.comp::before {
+	content: "";
+    width: 32px;
+    height: 32px;
+    display: inline-block;
+    background-size: 24px 24px;
+    background-position: center;
+    background-repeat: no-repeat;
+    margin-right: 8px;
+    background-color: white;
+    border-radius: 16px;
+}
+
+.fan::before {
+    background-image: url(../icons/fan.png);
+}
+
+.boiler::before {
+    background-image: url(../icons/boiler.png);
+}
+
+.sensor::before {
+    background-image: url(../icons/sensor.png);
+}
+
+.ac::before {
+    background-image: url(../icons/ac.png);
+}
+
+.condenser::before {
+    background-image: url(../icons/condenser.png);
+}
+
+.compName {
+	font-size: x-large;
+	margin: 0 0 8px 8px;
+	display: inline-block;
+	vertical-align: top;
+	line-height: 32px;
+}
+
+.action {
+	color: #ffab40;
+    margin: 16px 20px 0 0;
+    transition: color .3s ease;
+    text-transform: uppercase;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.action:hover {
+	color: #ffd8a6;
 }

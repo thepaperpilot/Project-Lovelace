@@ -44,5 +44,14 @@ function getNewProcess(socket) {
   childProcess.stderr.on('data', (chunk) => {
     console.log('err:' + chunk)
   })
+
+  // Simulate Verilog init stuff
+  // That is, in the actual project this would be sent by the verilog problem initially
+  socket.emit('stdout', "init 0 000 10 001 Downstairs Bathroom")
+  socket.emit('stdout', "init 1 001 20 Basement")
+  socket.emit('stdout', "init 2 010 30 Thermostat")
+  socket.emit('stdout', "init 3 011 40 Lobby")
+  socket.emit('stdout', "init 4 100 50 Outside")
+
   return childProcess
 }
