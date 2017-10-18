@@ -5,69 +5,54 @@ let log = document.getElementById('log')
 let input = document.getElementById('input')
 let toggleDrawer = document.getElementById('toggle-drawer')
 let compTemplate = Handlebars.compile(document.getElementById('comp\_template').innerHTML)
+let components
+
+let FAN_SPEEDS = {
+	"00": "Extra Low",
+	"01": "Low",
+	"10": "Medium",
+	"11": "High"
+}
 
 // Information on each component type
 // including what they're called, their css and template class name,
 // and a function for any component type specific handling while
 // creating their component cards
-let types = {
+let TYPES = {
 	"000": {
 		name: "Fan",
 		class: "fan",
-		values: [
-			"currTemp",
-			"currSpeed"
-		],
-		parse: (view) => {
-			let speeds = {
-				"000": "Off",
-				"001": "Extra Low",
-				"010": "Low",
-				"011": "Medium",
-				"100": "High"
-			}
-			view.on = view.currSpeed === '000' ? "Turn On" : "Turn Off"
-			view.currSpeed = speeds[view.currSpeed]
+		parse: (view, data) => {
+			view.on = data.slice(0, 1) === "0" ? "Turn On" : "Turn Off"
+			view.currSpeed = data.slice(0, 1) === "0" ? "OFF" : FAN_SPEEDS[data.slice(1, 3)]
 		}
 	},
 	"001": {
 		name: "Boiler",
 		class: "boiler",
-		values: [
-			"currTemp"
-		],
-		parse: (view) => {}
+		parse: () => {}
 	},
 	"010": {
 		name: "Sensor",
 		class: "sensor",
-		values: [
-			"currTemp"
-		],
-		parse: (view) => {}
+		parse: () => {}
 	},
 	"011": {
 		name: "AC Unit",
 		class: "ac",
-		values: [
-			"currTemp"
-		],
-		parse: (view) => {}
+		parse: () => {}
 	},
 	"100": {
 		name: "Condenser",
 		class: "condenser",
-		values: [
-			"currTemp"
-		],
-		parse: (view) => {}
+		parse: () => {}
 	}
 }
 
 // Create our templates for each component type
-let keys = Object.keys(types)
+let keys = Object.keys(TYPES)
 for (let i = 0; i < keys.length; i++) {
-	let template = types[keys[i]].class
+	let template = TYPES[keys[i]].class
 	Handlebars.registerPartial(
 		template, 
 		document.getElementById(template + '_template').innerHTML
@@ -78,21 +63,35 @@ for (let i = 0; i < keys.length; i++) {
 let actions = {
 	init: (values) => {
 		// Construct our view - all the parameters for this component
-		let type = types[values[1]]
+		let type = TYPES[values[1]]
 		let view = {
 			id: values[0],
-			name: values.slice(2 + type.values.length).join(' '),
-			class: type.class
+			class: type.class,
+			temperature: parseFloat(values[2]).toString(),
+			name: values.slice(4).join(' ')
 		}
 		// Add component type specific values
-		for (let i = 0; i < type.values.length; i++) {
-			view[type.values[i]] = values[2 + i]
+		type.parse(view, values[3])
+
+		components[values[0]] = {
+			view: view,
+			type: type,
+			values: values[3]
 		}
-		// Any component type specific view handling
-		type.parse(view)
 
 		// Render and display our component card
 		document.body.insertAdjacentHTML('beforeend', compTemplate(view))
+	},
+	update: (values) => {
+		let left = 101 - values[1]
+		let right = left + parseInt(values[2])
+		let comp = components[values[0]]
+		comp.values = comp.values.substring(0, left) + 
+					  values[3].substring(32 - values[2]) + 
+					  comp.values.substring(right)
+
+		comp.type.parse(comp.view, comp.values)
+		document.getElementById('comp ' + values[0]).outerHTML = compTemplate(comp.view)
 	}
 }
 
@@ -105,9 +104,10 @@ socket.on('connect', () => {
 	log.innerHTML = ''
 
 	// Clear fans list
-	let elements = document.getElementsByClassName('fan')
+	let elements = document.getElementsByClassName('comp')
 	while (elements[0])
 		elements[0].parentNode.removeChild(elements[0])
+	components = {}
 })
 
 socket.on('disconnect', () => {
@@ -118,7 +118,8 @@ socket.on('disconnect', () => {
 socket.on('stdout', (string) => {
 	appendToLog(string, "stdout")
 	let values = string.trim().split(/\s+/)
-	actions[values[0]](values.slice(1))
+	if (actions[values[0]]) actions[values[0]](values.slice(1))
+	else console.log(values)
 })
 
 input.addEventListener('submit', function (e) {
@@ -139,4 +140,14 @@ function appendToLog(string, className) {
 	element.innerText = string
 	log.append(element)
 	log.scrollTop = log.scrollHeight;
+}
+
+// Functions to be called by templated DOM elements
+function toggleOn(e) { // Toggles whether or not a fan is on
+	let message = "WRITE_DATA " + e.getAttribute("component") + " 101 1 " + (e.text === "Turn On" ? "1" : "0")
+	appendToLog(message, "stdin")
+	socket.emit("stdin", message)
+	// Example message for changing fan speed:
+	// WRITE_DATA 000 100 2 00
+	// BTW, the format is: COMMAND COMP_ID DATA_INDEX(left) DATA_WIDTH NEW_VALUE
 }

@@ -14,17 +14,18 @@ p {
     flex-direction: column;
     padding: 8px;
     box-sizing: border-box;
-    position: absolute;
+    position: fixed;
     top: 0;
     bottom: 0;
     z-index: 2;
     transition: all ease-in .5s;
-    width: 400px;
+    width: 50em;
+    font-family: Courier;
     left: 0;
 }
 
 .hidden {
-	left: -400px;
+	left: -50em;
 }
 
 .toggle-drawer {
@@ -35,6 +36,7 @@ p {
 	background-color: #242a33;
 	padding: 16px;
 	font-size: x-large;
+	font-family: initial;
 }
 
 .title {
@@ -53,7 +55,6 @@ p {
 	flex-grow: 1;
 	overflow: auto;
 	height: calc(100% - 1em);
-	font-family: Courier;
 }
 
 .input {
@@ -72,7 +73,8 @@ p {
 	color: white;
 	font-size: medium;
 	margin-top: 2px;
-	width: calc(100% - 1em);
+	width: calc(100% - 1em - 7px);
+	font-family: Courier;
 }
 
 .stdin {

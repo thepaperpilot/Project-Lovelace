@@ -24,21 +24,21 @@
     </div>
   </script>
   <script id="ac_template" type="text/mustache">
-    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+    <p id="comp {{id}} currTemp">Current Temperature: {{temperature}}°C</p>
   </script>
   <script id="boiler_template" type="text/mustache">
-    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+    <p id="comp {{id}} currTemp">Current Temperature: {{temperature}}°C</p>
   </script>
   <script id="condenser_template" type="text/mustache">
-    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+    <p id="comp {{id}} currTemp">Current Temperature: {{temperature}}°C</p>
   </script>
   <script id="fan_template" type="text/mustache">
-    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+    <p id="comp {{id}} currTemp">Current Temperature: {{temperature}}°C</p>
     <p id="comp {{id}} currSpeed">Current Speed: {{currSpeed}}</p>
-    <a id="comp {{id}} on" class="action">{{on}}</a>
+    <a id="comp {{id}} on" class="action" onClick="toggleOn(this);" component={{id}}>{{on}}</a>
   </script>
   <script id="sensor_template" type="text/mustache">
-    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+    <p id="comp {{id}} currTemp">Current Temperature: {{temperature}}°C</p>
   </script>
   <script src="js/index.js"></script>
 </body>

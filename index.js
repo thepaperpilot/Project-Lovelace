@@ -21,7 +21,8 @@ io.on('connection', function(socket){
     process: getNewProcess(socket)
   }
   socket.on('stdin', function(string) {
-    users[socket.id].process.stdin.write(string)
+    // Limit string to 50 characters
+    users[socket.id].process.stdin.write(string.slice(0, 49) + "\n")
   })
   socket.on('disconnect', function() {
     delete users[socket.id]
@@ -36,7 +37,10 @@ function getNewProcess(socket) {
   let childProcess = spawn(process.platform === 'win32' ? 'vvp a.out' : './a.out')
   // Create hook on our iverilog process that will receive every line of output from our iverilog program
   childProcess.stdout.on('data', (chunk) => {
-    socket.emit('stdout', chunk.toString())
+    let lines = chunk.toString().split('\n')
+    lines.forEach((line) => {
+      if (line.trim() !== '') socket.emit('stdout', line)
+    })
   })
   childProcess.stdout.on('close', (code) => {
     console.log('closed:' + code)
@@ -44,14 +48,6 @@ function getNewProcess(socket) {
   childProcess.stderr.on('data', (chunk) => {
     console.log('err:' + chunk)
   })
-
-  // Simulate Verilog init stuff
-  // That is, in the actual project this would be sent by the verilog problem initially
-  socket.emit('stdout', "init 0 000 10 001 Downstairs Bathroom")
-  socket.emit('stdout', "init 1 001 20 Basement")
-  socket.emit('stdout', "init 2 010 30 Thermostat")
-  socket.emit('stdout', "init 3 011 40 Lobby")
-  socket.emit('stdout', "init 4 100 50 Outside")
 
   return childProcess
 }
