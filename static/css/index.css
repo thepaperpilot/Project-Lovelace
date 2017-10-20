@@ -1,3 +1,8 @@
+body {
+	margin: 0;
+	background-color: #2a323d;
+}
+
 a:active, a:hover {
     outline: 0;
 }
@@ -153,4 +158,91 @@ p {
 
 .action:hover {
 	color: #ffd8a6;
+}
+
+.hacker-start {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: black;
+	z-index: 100;
+	transition: opacity .5s ease;
+	color: green;
+	display: flex;
+	justify-content: flex-end;
+	text-align: left;
+	flex-direction: column;
+	padding: 20px;
+	pointer-events: none;
+}
+
+.hacker-start.hidden {
+	opacity: 0;
+	left: 0;
+}
+
+.hacker-theme {
+	display: none;
+}
+
+.hacker {
+	background-color: black;
+}
+
+.hacker .comp:before {
+	content: unset;
+}
+
+.hacker .comp {
+	color: green;
+	font-family: "Courier New";
+	background-color: black;
+	box-shadow: none;
+	border-bottom: green solid 1px;
+}
+
+.hacker .compName {
+	font-size: unset;
+	margin: unset;
+}
+
+.hacker .action {
+	color: green;
+	text-decoration: underline;
+}
+
+.hacker .action:hover {
+	color: lightgreen;
+}
+
+.hacker .panel {
+	background-color: black;
+	color: green;
+}
+
+.hacker .toggle-drawer {
+	background-color: black;
+}
+
+.hacker .input {
+	color: green;
+}
+
+.hacker .input input {
+	color: green;
+}
+
+.hacker .stdout {
+	color: green;
+}
+
+.hacker .stdin {
+	color: lightgreen;
+}
+
+.hacker .title {
+	background-color: black;
+	color: green;
 }

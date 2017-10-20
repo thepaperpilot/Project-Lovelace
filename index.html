@@ -5,8 +5,8 @@
   <title>Project Lovelace</title>
 </head>
 <link rel="stylesheet" type="text/css" href="css/index.css">
-<body style="margin: 0; background-color: #2a323d;">
-  <span class="title">Project Lovelace</span>
+<body>
+  <span id="title" class="title">Project Lovelace</span>
   <div class="panel hidden" id="panel">
     <div id="toggle-drawer" class="toggle-drawer">LOG</div>
     <div id="log" class="middle log">
@@ -15,6 +15,7 @@
       <input type="text">
     </form>
   </div>
+  <div class="hacker-start hidden" id="hacker-start"></div>
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/handlebars-latest.js"></script>
   <script id="comp_template" type="text/mustache">

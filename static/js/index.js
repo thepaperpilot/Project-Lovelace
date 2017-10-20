@@ -4,8 +4,27 @@ let panel = document.getElementById('panel')
 let log = document.getElementById('log')
 let input = document.getElementById('input')
 let toggleDrawer = document.getElementById('toggle-drawer')
+let title = document.getElementById('title')
+let hackerStart = document.getElementById('hacker-start')
 let compTemplate = Handlebars.compile(document.getElementById('comp\_template').innerHTML)
 let components
+
+let hackerText = [
+  	"Initializing...",
+  	"Shining laser into space...",
+  	"Transmitting byte code...",
+  	"Analyzing results...",
+  	"Transmitting hotfix...",
+  	"Analyzing self...",
+  	"Hijacking phone lines...",
+  	"Starting background music...",
+  	"Establishing connection...",
+  	"Accessing mainframe...",
+  	"Loading interface...",
+	"Success!!"
+]
+let hackerLevel = 0
+let hackerInterval
 
 let FAN_SPEEDS = {
 	"00": "Extra Low",
@@ -133,6 +152,28 @@ input.addEventListener('submit', function (e) {
 toggleDrawer.addEventListener('click', function () {
 	panel.className = panel.className === 'panel' ? 'panel hidden' : 'panel'
 })
+
+title.addEventListener('click', function () {
+	if (hackerLevel === 0) {
+		hackerLevel++
+		hackerInterval = setInterval(initiateHackerMode, 500)
+		hackerStart.className = "hacker-start"
+	}
+})
+
+function initiateHackerMode() {
+	hackerStart.innerHTML += hackerText[hackerLevel - 1] + "<br/>"
+	hackerLevel++
+	if (hackerLevel == 9) {
+		document.body.innerHTML += '<iframe class="hacker-theme" src="http://www.youtube.com/embed/XAYhNHhxN0A?autoplay=1&loop=1&playlist=XAYhNHhxN0A" frameborder="0" allowfullscreen></iframe>​'
+		hackerStart = document.getElementById('hacker-start')
+	}
+	if (hackerLevel > hackerText.length) {
+		clearInterval(hackerInterval)
+		document.body.className = "hacker"
+		hackerStart.className += " hidden"
+	}
+}
 
 function appendToLog(string, className) {
 	let element = document.createElement('div')
