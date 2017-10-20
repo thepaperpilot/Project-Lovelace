@@ -117,6 +117,7 @@ let actions = {
 socket.on('connect', () => {
 	// Disable Log
 	input.className = 'middle input'
+	title.className = 'title'
 	input.querySelector('input').disabled = false
 
 	// Clear Log
@@ -131,6 +132,7 @@ socket.on('connect', () => {
 
 socket.on('disconnect', () => {
 	input.className = 'middle input error'
+	title.className = 'title error'
 	input.querySelector('input').disabled = true
 })
 

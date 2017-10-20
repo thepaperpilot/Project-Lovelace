@@ -91,7 +91,8 @@ p {
 }
 
 .error {
-	background: red;
+	background: red !important;
+	color: black !important;
 }
 
 .comp {
