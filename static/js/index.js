@@ -165,12 +165,11 @@ function initiateHackerMode() {
 	hackerStart.innerHTML += hackerText[hackerLevel - 1] + "<br/>"
 	hackerLevel++
 	if (hackerLevel == 9) {
-		document.body.innerHTML += '<iframe class="hacker-theme" src="http://www.youtube.com/embed/XAYhNHhxN0A?autoplay=1&loop=1&playlist=XAYhNHhxN0A" frameborder="0" allowfullscreen></iframe>​'
-		hackerStart = document.getElementById('hacker-start')
+		document.body.className = "hacker"
+		document.body.insertAdjacentHTML('beforeend', '<iframe class="hacker-theme" src="http://www.youtube.com/embed/XAYhNHhxN0A?autoplay=1&loop=1&playlist=XAYhNHhxN0A" frameborder="0" allowfullscreen></iframe>​')
 	}
 	if (hackerLevel > hackerText.length) {
 		clearInterval(hackerInterval)
-		document.body.className = "hacker"
 		hackerStart.className += " hidden"
 	}
 }

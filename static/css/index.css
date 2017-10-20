@@ -176,6 +176,7 @@ p {
 	flex-direction: column;
 	padding: 20px;
 	pointer-events: none;
+	font-size: large;
 }
 
 .hacker-start.hidden {
