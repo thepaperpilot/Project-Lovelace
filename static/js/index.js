@@ -20,6 +20,7 @@ let hackerText = [
   	"Starting background music...",
   	"Establishing connection...",
   	"Accessing mainframe...",
+  	"Acquiring Sentience...",
   	"Loading interface...",
 	"Success!!"
 ]
