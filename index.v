@@ -61,13 +61,15 @@ module io;
 	integer width;
 	integer i;
 	reg[31:0] value;
-	integer r;
-	reg CLK;
+	integer c,r;
+	reg CLK;	// Pretend this is private- don't use it!
+	reg tick;	// Use this one. It ticks based on the server 
 
-	// This creates our clock. CLK will get inverted every clk_per/2 (ms?)
+	// This creates our clock. CLK will get inverted every (clk_per/2) clock cycles
 	initial
 		begin
 			CLK = 0;
+			tick = 0;
 			forever
 			#(clk_per/2) CLK = ~CLK;
 		end
@@ -77,23 +79,40 @@ module io;
 		// Check if we're at the end of file
 		if (!$feof(STDIN))
 			begin
-				// Read the next line from stdin
-				r = $fscanf(STDIN, "%s %b %d %d %b", command, id, right, width, value);
-				// This is where the logic goes!
-				case (command)
-				"WRITE_DATA":
+				// Read the next command
+				c = $fgetc(STDIN);
+				case (c)
+				"e":	// Write Extra
 					begin
-						// TODO better way of doing this?
-						// tasks don't work (won't change the component registers' bits)
+						r = $fscanf(STDIN, "%b %d %d %b", id, right, width, value);
 						if (components.comp0[`id] == id)
 							for (i = 0; i < width; i++)
 								components.comp0[right - i] = value[width - 1 - i];
 						//else if (components.component1[`id] == id)
 						//	for (i = 0; i < width; i++) 
 						//		components.component1[right - i] = value[width - 1 - i];
-						$display("update %b %d %d %b", id, right, width, value);
+						$display("update_extra %b %d %d %b", id, right, width, value);
 						$fflush;
 					end
+				"f":	// Write Float
+					begin
+						r = $fscanf(STDIN, "%b %d %d", id, right, value);
+						if (components.comp0[`id] == id)
+							begin
+								case (right)
+								1:
+									components.comp0[`float1] = $realtobits(value);
+								2:
+									components.comp0[`float2] = $realtobits(value);
+								3:
+									components.comp0[`float3] = $realtobits(value);
+								endcase
+							end
+						$display("update_float %b %d %d", id, right, value);
+						$fflush;
+					end
+				"t":	// Tick
+					tick = ~tick;
 				endcase
 			end
 		else
@@ -103,27 +122,16 @@ endmodule
 
 module solar;
 
-	parameter clk_per = 10;
-
-	reg CLK;
-
-	// This creates our clock. CLK will get inverted every clk_per/2 (ms?)
-	initial
-		begin
-			CLK = 0;
-			forever
-			#(clk_per/2) CLK = ~CLK;
-		end
-
 	// This triggers whenever the clock ticks over to negative
-	always @ (posedge CLK)
+	always @ (posedge io.tick)
 		begin
 			components.comp0[`sun] = ~components.comp0[`sun];
 			if (components.comp0[`sun])
-				components.comp0[`float2] = $realtobits(0);
-			else
 				components.comp0[`float2] = $realtobits(120);
-			$display("update %b %d %d %b", components.comp0[`id], 8'd226, 1'd1, components.comp0[`sun]);
+			else
+				components.comp0[`float2] = $realtobits(0);
+			$display("update_extra %b %d %d %b", components.comp0[`id], 8'd226, 1'd1, components.comp0[`sun]);
+			$display("update_float %b %d %d", components.comp0[`id], 2'd2, $bitstoreal(components.comp0[`float2]));
 			$fflush;
 		end
 

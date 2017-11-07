@@ -85,7 +85,7 @@ let actions = {
 		// Render and display our component card
 		document.body.insertAdjacentHTML('beforeend', compTemplate(view))
 	},
-	update: (values) => {
+	update_extra: (values) => {
 		let left = 226 - values[1]
 		let right = left + parseInt(values[2])
 		let comp = components[values[0]]
@@ -93,6 +93,23 @@ let actions = {
 		comp.values = comp.values.substring(0, left) + 
 					  values[3] + 
 					  comp.values.substring(right)
+
+		comp.type.parse(comp.view, comp.values)
+		document.getElementById('comp ' + values[0]).outerHTML = compTemplate(comp.view)
+	},
+	update_float: (values) => {
+		let comp = components[values[0]]
+		switch(values[1]) {
+			case "1":
+				comp.view.float1 = values[2]
+				break;
+			case "2":
+				comp.view.float2 = values[2]
+				break;
+			case "3":
+				comp.view.float3 = values[2]
+				break;
+		}
 
 		comp.type.parse(comp.view, comp.values)
 		document.getElementById('comp ' + values[0]).outerHTML = compTemplate(comp.view)
@@ -172,10 +189,10 @@ function appendToLog(string, className) {
 
 // Functions to be called by templated DOM elements
 function toggleOn(e) { // Toggles whether or not a fan is on (lleft here as an example- be aware extra data "starts" (and goes down) from 226, instead of 101, now)
-	let message = "WRITE_DATA " + e.getAttribute("component") + " 101 1 " + (e.text === "Turn On" ? "1" : "0")
+	let message = "e " + e.getAttribute("component") + " 101 1 " + (e.text === "Turn On" ? "1" : "0")
 	appendToLog(message, "stdin")
 	socket.emit("stdin", message)
 	// Example message for changing fan speed:
-	// WRITE_DATA 000 100 2 00
+	// e 000 100 2 00
 	// BTW, the format is: COMMAND COMP_ID DATA_INDEX(left) DATA_WIDTH NEW_VALUE
 }

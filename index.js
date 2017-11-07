@@ -42,7 +42,7 @@ So effectively all our clocks will be on the same interval. Keep that in mind. S
 setInterval(() => {
   let keys = Object.keys(users);
   for (let i = 0; i < keys.length; i++) {
-    users[keys[i]].process.stdin.write('noop 00 0 0 0\n');
+    users[keys[i]].process.stdin.write('t\n');
   }
 }, 250)
 
