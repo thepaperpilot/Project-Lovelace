@@ -171,17 +171,7 @@ function appendToLog(string, className) {
 }
 
 // Functions to be called by templated DOM elements
-function toggleOn(e) { // Toggles whether or not a fan is on
-	let message = "WRITE_DATA " + e.getAttribute("component") + " 101 1 " + (e.text === "Turn On" ? "1" : "0")
-	appendToLog(message, "stdin")
-	socket.emit("stdin", message)
-	// Example message for changing fan speed:
-	// WRITE_DATA 000 100 2 00
-	// BTW, the format is: COMMAND COMP_ID DATA_INDEX(left) DATA_WIDTH NEW_VALUE
-}
-
-// Functions to be called by templated DOM elements
-function toggleOn(e) { // Toggles whether or not a fan is on
+function toggleOn(e) { // Toggles whether or not a fan is on (lleft here as an example- be aware extra data "starts" (and goes down) from 226, instead of 101, now)
 	let message = "WRITE_DATA " + e.getAttribute("component") + " 101 1 " + (e.text === "Turn On" ? "1" : "0")
 	appendToLog(message, "stdin")
 	socket.emit("stdin", message)

@@ -33,6 +33,12 @@ http.listen(PORT, function(){
   console.log('listening on *:' + PORT);
 });
 
+// This is actually super important. I hope one day it won't be.
+// Copied from my(Anthony) message on slack to the team:
+/*
+It turns out reading from stdin is blocking. The internet seems to disagree, and maybe its just iverilog that has this issue, but whenever I try to read from stdin it will wait until there's something to read, and not run other code in parallel- even in different modules. I tried to make it work for a long time, but at this point I think its a lost cause. So, I used a hack-y solution: I send a noop command every 250ms (this value can obviously be changed). What this means is that no matter what our clocks are in the verilog, if it takes less than 250ms to perform, its really going to be going off that instead
+So effectively all our clocks will be on the same interval. Keep that in mind. Sorry for the inconvenience (and use counters to make clocks take longer, that's what I'll be doing with the solar panel bit anyways)
+*/
 setInterval(() => {
   let keys = Object.keys(users);
   for (let i = 0; i < keys.length; i++) {
