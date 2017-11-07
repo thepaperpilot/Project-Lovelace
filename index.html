@@ -5,8 +5,8 @@
   <title>Project Lovelace</title>
 </head>
 <link rel="stylesheet" type="text/css" href="css/index.css">
-<body style="margin: 0; background-color: #2a323d;">
-  <span class="title">Project Lovelace</span>
+<body>
+  <span id="title" class="title">Project Lovelace</span>
   <div class="panel hidden" id="panel">
     <div id="toggle-drawer" class="toggle-drawer">LOG</div>
     <div id="log" class="middle log">
@@ -15,6 +15,7 @@
       <input type="text">
     </form>
   </div>
+  <div class="hacker-start hidden" id="hacker-start"></div>
   <script src="/socket.io/socket.io.js"></script>
   <script src="js/handlebars-latest.js"></script>
   <script id="comp_template" type="text/mustache">
@@ -23,22 +24,15 @@
       {{> (lookup . 'class') }}
     </div>
   </script>
-  <script id="ac_template" type="text/mustache">
-    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+  <script id="airflow_template" type="text/mustache">
   </script>
-  <script id="boiler_template" type="text/mustache">
-    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+  <script id="thruster_template" type="text/mustache">
+    <a id="comp {{id}} on" class="action" onClick="toggleOn(this);" component={{id}}>{{on}}</a>
   </script>
-  <script id="condenser_template" type="text/mustache">
-    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
-  </script>
-  <script id="fan_template" type="text/mustache">
-    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
-    <p id="comp {{id}} currSpeed">Current Speed: {{currSpeed}}</p>
-    <a id="comp {{id}} on" class="action">{{on}}</a>
-  </script>
-  <script id="sensor_template" type="text/mustache">
-    <p id="comp {{id}} currTemp">Current Temperature: {{currTemp}}°C</p>
+  <script id="solar_template" type="text/mustache">
+    <p id="comp {{id}} currAngle">Current Panel Angle: {{float1}} radians</p>
+    <p id="comp {{id}} currOutput">Current Energy Output: {{float2}} KW</p>
+    <p id="comp {{id}} sun">{{sun}}</p>
   </script>
   <script src="js/index.js"></script>
 </body>

@@ -1,3 +1,8 @@
+body {
+	margin: 0;
+	background-color: #2a323d;
+}
+
 a:active, a:hover {
     outline: 0;
 }
@@ -14,17 +19,18 @@ p {
     flex-direction: column;
     padding: 8px;
     box-sizing: border-box;
-    position: absolute;
+    position: fixed;
     top: 0;
     bottom: 0;
     z-index: 2;
     transition: all ease-in .5s;
-    width: 400px;
+    width: 50em;
+    font-family: Courier;
     left: 0;
 }
 
 .hidden {
-	left: -400px;
+	left: -50em;
 }
 
 .toggle-drawer {
@@ -35,6 +41,7 @@ p {
 	background-color: #242a33;
 	padding: 16px;
 	font-size: x-large;
+	font-family: initial;
 }
 
 .title {
@@ -53,7 +60,6 @@ p {
 	flex-grow: 1;
 	overflow: auto;
 	height: calc(100% - 1em);
-	font-family: Courier;
 }
 
 .input {
@@ -72,7 +78,8 @@ p {
 	color: white;
 	font-size: medium;
 	margin-top: 2px;
-	width: calc(100% - 1em);
+	width: calc(100% - 1em - 7px);
+	font-family: Courier;
 }
 
 .stdin {
@@ -84,7 +91,8 @@ p {
 }
 
 .error {
-	background: red;
+	background: red !important;
+	color: black !important;
 }
 
 .comp {
@@ -112,24 +120,16 @@ p {
     border-radius: 16px;
 }
 
-.fan::before {
+.airflow::before {
     background-image: url(../icons/fan.png);
 }
 
-.boiler::before {
+.thruster::before {
     background-image: url(../icons/boiler.png);
 }
 
-.sensor::before {
+.solar::before {
     background-image: url(../icons/sensor.png);
-}
-
-.ac::before {
-    background-image: url(../icons/ac.png);
-}
-
-.condenser::before {
-    background-image: url(../icons/condenser.png);
 }
 
 .compName {
@@ -151,4 +151,95 @@ p {
 
 .action:hover {
 	color: #ffd8a6;
+}
+
+
+
+
+.hacker-start {
+	position: fixed;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	background: black;
+	z-index: 100;
+	transition: opacity .5s ease;
+	color: green;
+	display: flex;
+	justify-content: flex-end;
+	text-align: left;
+	flex-direction: column;
+	padding: 20px;
+	pointer-events: none;
+	font-size: large;
+}
+
+.hacker-start.hidden {
+	opacity: 0;
+	left: 0;
+}
+
+.hacker-theme {
+	display: none;
+}
+
+.hacker {
+	background-color: black;
+}
+
+.hacker .comp:before {
+	content: unset;
+}
+
+.hacker .comp {
+	color: green;
+	font-family: "Courier New";
+	background-color: black;
+	box-shadow: none;
+	border-bottom: green solid 1px;
+}
+
+.hacker .compName {
+	font-size: unset;
+	margin: unset;
+}
+
+.hacker .action {
+	color: green;
+	text-decoration: underline;
+}
+
+.hacker .action:hover {
+	color: lightgreen;
+}
+
+.hacker .panel {
+	background-color: black;
+	color: green;
+}
+
+.hacker .toggle-drawer {
+	background-color: black;
+}
+
+.hacker .input {
+	color: green;
+}
+
+.hacker .input input {
+	color: green;
+}
+
+.hacker .stdout {
+	color: green;
+}
+
+.hacker .stdin {
+	color: lightgreen;
+}
+
+.hacker .title {
+	background-color: black;
+	color: green;
 }
