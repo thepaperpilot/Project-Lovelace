@@ -35,18 +35,28 @@ let TYPES = {
 	"00": {
 		name: "Airflow Control Unit",
 		class: "airflow",
-		parse: () => {}
+		parse: (view, extra) => {
+			view.room1 = extra.slice(0, 1) === "1" ? "active" : "inactive"
+			view.room2 = extra.slice(1, 2) === "1" ? "active" : "inactive"
+			view.room3 = extra.slice(2, 3) === "1" ? "active" : "inactive"
+			view.room4 = extra.slice(3, 4) === "1" ? "active" : "inactive"
+			view.alert = extra.slice(4, 5) === "1" ? " alert" : ""
+		}
 	},
 	"01": {
 		name: "Thrusters Control Unit",
 		class: "thruster",
-		parse: () => {}
+		parse: (view, extra) => {
+			view.cw = extra.slice(0, 2) === "00" ? "active" : ""
+			view.off = extra.slice(0, 2) === "01" ? "active" : ""
+			view.ccw = extra.slice(0, 1) === "1" ? "active" : ""
+		}
 	},
 	"10": {
 		name: "Solar Panel Control Unit",
 		class: "solar",
-		parse: (view, data) => {
-			view.sun = data.slice(0, 1) === "0" ? "Sun is Blocked" : "Sun is Visible"
+		parse: (view, extra) => {
+			view.sun = extra.slice(0, 1)
 		}
 	}
 }
@@ -92,7 +102,7 @@ let actions = {
 		let comp = components[values[0]]
 
 		comp.values = comp.values.substring(0, left) + 
-					  values[3] + 
+					  values[3].substring(left, right) + 
 					  comp.values.substring(right)
 
 		comp.type.parse(comp.view, comp.values)
@@ -146,6 +156,17 @@ socket.on('stdout', (string) => {
 	else console.log(values)
 })
 
+// This is actually super important. I hope one day it won't be.
+// Copied from my(Anthony) message on slack to the team:
+/*
+It turns out reading from stdin is blocking. The internet seems to disagree, and maybe its just iverilog that has this issue, but whenever I try to read from stdin it will wait until there's something to read, and not run other code in parallel- even in different modules. I tried to make it work for a long time, but at this point I think its a lost cause. So, I used a hack-y solution: I send a noop command every 250ms (this value can obviously be changed). What this means is that no matter what our clocks are in the verilog, if it takes less than 250ms to perform, its really going to be going off that instead
+So effectively all our clocks will be on the same interval. Keep that in mind. Sorry for the inconvenience (and use counters to make clocks take longer, that's what I'll be doing with the solar panel bit anyways)
+*/
+setInterval(() => {
+	appendToLog("t", "stdin")
+	socket.emit("stdin", "t");
+}, 250)
+
 input.addEventListener('submit', function (e) {
 	e.preventDefault()
 	let input = e.target.querySelector('input')
@@ -176,6 +197,7 @@ function initiateHackerMode() {
 	if (hackerLevel > hackerText.length) {
 		clearInterval(hackerInterval)
 		hackerStart.className += " hidden"
+		socket.emit("stdin", "h")
 	}
 }
 
@@ -189,11 +211,29 @@ function appendToLog(string, className) {
 }
 
 // Functions to be called by templated DOM elements
-function toggleOn(e) { // Toggles whether or not a fan is on (lleft here as an example- be aware extra data "starts" (and goes down) from 226, instead of 101, now)
-	let message = "e " + e.getAttribute("component") + " 101 1 " + (e.text === "Turn On" ? "1" : "0")
+function toggleBool(e) { // Toggles a boolean
+	let component = e.getAttribute("component")
+	let index = parseInt(e.getAttribute("index"))
+	let value = components[component].values.slice(index, index + 1) === "1" ? "0" : "1"
+	let message = "e " + component + " " + (226 - index) + " 1 " + value
 	appendToLog(message, "stdin")
 	socket.emit("stdin", message)
-	// Example message for changing fan speed:
-	// e 000 100 2 00
-	// BTW, the format is: COMMAND COMP_ID DATA_INDEX(left) DATA_WIDTH NEW_VALUE
+}
+
+function setState(e) { // Sets a state
+	let component = e.getAttribute("component")
+	let index = e.getAttribute("index")
+	let width = e.getAttribute("width")
+	let value = e.getAttribute("value")
+	let message = "e " + component + " " + (226 - index) + " " + width + " " + value
+	appendToLog(message, "stdin")
+	socket.emit("stdin", message)
+}
+
+function setFloat(e) { // Sets a float
+	let component = e.getAttribute("component")
+	let index = e.getAttribute("index")
+	let message = "f " + component + " " + index + " " + e.value
+	appendToLog(message, "stdin")
+	socket.emit("stdin", message)
 }

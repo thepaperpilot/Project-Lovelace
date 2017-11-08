@@ -10,6 +10,13 @@
 `define float3 195:132 // Third data float
 `define extra 226:195 // Any other information needed by the component (32 bits)
 
+// Extra information for Airflow Control
+// float1 is current oxygen supply (of 256)
+// float2 is ignored
+// float3 is ignored
+`define rooms 226:223 // Which rooms have open vents (4 booleans - in a RAM)
+`define alert 222:222 // Whether or not we're sending an alert to the client
+
 // Extra information for Thrusters Control
 // float1 is current ISS angle
 // float2 is current ISS rotational velocity
@@ -21,10 +28,11 @@
 // float1 is current solar panel angle
 // float2 is current solar panel energy output
 // float3 is ignored
-`define sun 226:226 // whether the sun is visible
+`define sun 226:226
 
 module components;
 	
+	reg[`WIDTH-1:0] comp1;
 	reg[`WIDTH-1:0] comp2;
 	reg[`WIDTH-1:0] comp3;
 
@@ -45,15 +53,24 @@ module components;
 
 	initial begin
 		// Thrusters Control Unit
-		comp2[`id] = 2'b00;
-		comp2[`type] = 2'b10;
-		comp2[`sun] = 1'b1;
+		comp1[`id] = 2'b00;
+		comp1[`type] = 2'b00;
+		comp1[`rooms] = 4'b1101;
+		comp1[`alert] = 1'b0;
+		comp1[`float1] = $realtobits(198);
+		init(comp1);
+
+		// Thrusters Control Unit
+		comp2[`id] = 2'b01;
+		comp2[`type] = 2'b01;
+		comp2[`direction] = 2'b00;
 		comp2[`float1] = $realtobits(1.57);
-		comp2[`float2] = $realtobits(120);
+		comp2[`float2] = $realtobits(3.14);
+		comp2[`float3] = $realtobits(100);
 		init(comp2);
 
 		// Solar Panel Control Unit
-		comp3[`id] = 2'b00;
+		comp3[`id] = 2'b10;
 		comp3[`type] = 2'b10;
 		comp3[`sun] = 1'b1;
 		comp3[`float1] = $realtobits(1.57);
@@ -71,7 +88,7 @@ module io;
 	// TODO this is very specific to the command being "WRITE_DATA".
 	// Find a way to generalize it for any command
 	reg[10*8:0] command; // 10 length string
-	reg[2:0] id; // id of component to perform actions on
+	reg[1:0] id; // id of component to perform actions on
 	integer right; // LSB index
 	integer width;
 	integer i;
@@ -97,21 +114,38 @@ module io;
 			case (c)
 			"e":	// Write Extra
 				begin
+					c = $fgetc(STDIN); // Dump space character
 					r = $fscanf(STDIN, "%b %d %d %b", id, right, width, value);
-					if (components.comp1[`id] == id)
+					if (components.comp1[`id] == id) begin
 						for (i = 0; i < width; i++)
 							components.comp1[right - i] = value[width - 1 - i];
-					else if (components.comp2[`id] == id)
+						$display("update_extra %b %d %d %b", 
+							id, 						// %b
+							right, 						// %d
+							width, 						// %d
+							components.comp1[`extra]);	// %b
+					end else if (components.comp2[`id] == id) begin
 						for (i = 0; i < width; i++) 
 							components.comp2[right - i] = value[width - 1 - i];
-					else if (components.comp3[`id] == id)
+						$display("update_extra %b %d %d %b", 
+							id, 						// %b
+							right, 						// %d
+							width, 						// %d
+							components.comp2[`extra]);	// %b
+					end else if (components.comp3[`id] == id) begin
 						for (i = 0; i < width; i++) 
 							components.comp3[right - i] = value[width - 1 - i];
-					$display("update_extra %b %d %d %b", id, right, width, value);
+						$display("update_extra %b %d %d %b", 
+							id, 						// %b
+							right, 						// %d
+							width, 						// %d
+							components.comp3[`extra]);	// %b
+					end
 					$fflush;
 				end
 			"f":	// Write Float
 				begin
+					c = $fgetc(STDIN); // Dump space character
 					r = $fscanf(STDIN, "%b %d %d", id, right, value);
 					if (components.comp1[`id] == id)
 						begin
@@ -149,6 +183,9 @@ module io;
 					$display("update_float %b %d %d", id, right, value);
 					$fflush;
 				end
+			"h":
+				// TODO hacker mode state
+				begin end
 			"t":	// Tick
 				tick = ~tick;
 			endcase
@@ -159,7 +196,6 @@ endmodule
 
 module solar;
 
-	// This triggers whenever the clock ticks over to negative
 	always @ (posedge io.tick) begin
 		components.comp3[`sun] = ~components.comp3[`sun];
 		if (components.comp3[`sun])
@@ -170,7 +206,7 @@ module solar;
 			components.comp3[`id], 						// %b
 			8'd226, 									// %d
 			1'd1, 										// %d
-			components.comp3[`sun]);					// %b
+			components.comp3[`extra]);					// %b
 		$display("update_float %b %d %d", 
 			components.comp3[`id], 						// %b
 			2'd2, 										// %d
