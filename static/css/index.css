@@ -361,3 +361,44 @@ input {
 	background-color: black;
 	color: green;
 }
+
+.hacker .progress {
+	background-color: darkgreen;
+}
+
+.hacker .bar {
+	background-color: green;
+}
+
+.hacker .state {
+	border-color: green;
+	color: lightgreen;
+}
+
+.hacker .state.active {
+	background-color: green;
+}
+
+.hacker .state.inactive {
+	background-color: black;
+}
+
+.hacker .circle {
+	border-color: green;
+    background: black;
+    display: inline-block;
+}
+
+.hacker .arrow {
+	background-color: green;
+}
+
+.hacker .arrow::before {
+	border-left-color: green;
+}
+
+.hacker input {
+	background: black;
+    color: lightgreen;
+    border-color: green;
+}
