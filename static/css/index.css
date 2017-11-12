@@ -13,6 +13,7 @@ p {
 
 input {
 	margin: 8px 0;
+	font-size: medium;
 }
 
 .sun0, .moon1 {
@@ -281,7 +282,7 @@ input {
 	left: 0;
 	right: 0;
 	background: black;
-	z-index: 100;
+	z-index: 10000;
 	transition: opacity .5s ease;
 	color: green;
 	display: flex;
@@ -371,22 +372,30 @@ input {
 }
 
 .hacker .state {
-	border-color: green;
+	border: none;
 	color: lightgreen;
+	background: none;
 }
 
-.hacker .state.active {
-	background-color: green;
+.hacker .state.toggle {
+	border: solid 2px green;
+	background: green;
+}
+
+.hacker .state.active:not(.toggle) {
+	text-decoration: underline;
 }
 
 .hacker .state.inactive {
 	background-color: black;
 }
 
+.hacker .compass {
+	width: unset;
+}
+
 .hacker .circle {
-	border-color: green;
-    background: black;
-    display: inline-block;
+    display: none;
 }
 
 .hacker .arrow {
@@ -400,5 +409,51 @@ input {
 .hacker input {
 	background: black;
     color: lightgreen;
-    border-color: green;
+    border: none;
+    border-bottom: 1px solid lightgreen;
+}
+
+.hacker .progress.alert {
+  	box-shadow: unset;
+	-webkit-animation: unset;
+  	-moz-animation: unset;
+  	-ms-animation: unset;
+  	animation: unset;
+  	z-index: unset;
+	overflow: unset;
+}
+
+.hacker .progress.alert:after {
+	content: "!";
+	position: absolute;
+	right: -1em;
+	bottom: 0;
+	color: lightgreen;
+}
+
+.hacker .sun1, .hacker .moon0 {
+	position: unset;
+	text-align: unset;
+	font-size: unset;
+	display: block;
+}
+
+.hacker .sun1 p, .hacker .moon0 p {
+	display: inline;
+}
+
+.hacker .sun1:before {
+	content: "Sun is visible (";
+}
+
+.hacker .moon0:before {
+	content: "Sun is blocked (";
+}
+
+.hacker .sun1:after, .hacker .moon0:after {
+	content: ")";
+}
+
+.hacker .time {
+	display: none;
 }

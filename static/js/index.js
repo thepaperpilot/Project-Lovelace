@@ -80,7 +80,7 @@ let TYPES = {
 			comp.type.parse(comp.view, data)
 			comp.view.angle = angle
 			setTimeout(() => {
-				document.getElementById("arrow " + comp.view.id).style.transform = 'rotate(' + data[0] + 'rad)'
+				document.getElementById("arrow " + comp.view.id).style.transform = 'scaleY(-1) rotate(' + data[0] + 'rad)'
 				document.getElementById("angle " + comp.view.id).innerText = 'Current Solar Panel Angle: ' + data[0].slice(0, 4) + ' radians'
 				comp.view.angle = data[0].slice(0, 4)
 			}, 10)

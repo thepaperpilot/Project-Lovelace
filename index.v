@@ -88,7 +88,7 @@ module control;
 	// ended up not really succeeding, because now each logic
 	// module is hardcoded to its own data. Ah well, it would
 	// tke too long to refactor all that at this point
-	airflow airflowComp(io.tick, rst, thrusters);
+	airflow airflowComp(io.tick, rst, airflow);
 	thrusters thrustersComp(io.tick, rst, thrusters);
 	solar solarComp(io.tick, rst, solar);
 
@@ -297,7 +297,7 @@ module solar(clk, rst, in);
 		end
 	endtask
 
-	always @(posedge io.tick) begin
+	always @(posedge clk) begin
 		case(state)
 		// no concatenation here, because those don't support reals as operands
 			`S_OFF: begin 
