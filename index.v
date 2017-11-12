@@ -3,8 +3,8 @@
 // -----------------------------------------------------------------------------
 
 // FSM stuff
-`define SWIDTH 2
-`define S_OFF 2'b00
+`define SWIDTH 2	// Number of bits needed to represent our current state
+`define S_OFF 2'b00	// State when component is turned off
 `define S_A   2'b01
 `define S_B   2'b10
 `define S_C   2'b11
@@ -19,14 +19,12 @@ module io;
 	parameter clk_per = 10;
 	parameter STDIN = 32'h8000_0000;
 
-	// TODO this is very specific to the command being "WRITE_DATA".
-	// Find a way to generalize it for any command
-	reg[1:0] id; // id of component to perform actions on
-	integer index;
-	reg[63:0] value;
-	integer c,r;
-	reg CLK;	// Pretend this is private- don't use it!
-	reg tick;	// Use this one. It ticks based on the server 
+	reg[1:0] id; 		// id of component to perform actions on
+	integer index;		// For some commands, index of a variable to change
+	reg[63:0] value;	// For some commands, value to change a variable to
+	integer c,r;		// For reading commands
+	reg CLK;			// Pretend this is private- don't use it!
+	reg tick;			// Use this one. It ticks based on the server 
 
 	// This creates our clock. CLK will get inverted every (clk_per/2) cycles
 	initial begin
@@ -43,31 +41,36 @@ module io;
 			// Read the next command
 			c = $fgetc(STDIN);
 			case (c)
-			"b":	// Write Binary
-				begin
-					c = $fgetc(STDIN); // Dump space character
-					r = $fscanf(STDIN, "%b %d %b", id, index, value);
-					case (id)
-						2'b00: control.airflowComp.update_binary(index, value);
-						2'b01: control.thrustersComp.update_binary(index, value);
-						2'b10: control.solarComp.update_binary(index, value);
-					endcase
-				end
-			"f":	// Write Float
-				begin
-					c = $fgetc(STDIN); // Dump space character
-					r = $fscanf(STDIN, "%b %d %d", id, index, value);
-					case (id)
-						2'b00: control.airflowComp.update_float(index, value);
-						2'b01: control.thrustersComp.update_float(index, value);
-						2'b10: control.solarComp.update_float(index, value);
-					endcase
-				end
-			"h":
-				// TODO hacker mode state
-				begin end
-			"t":	// Tick
+			"b": begin	// Write Binary Value
+				c = $fgetc(STDIN); // Dump space character
+				r = $fscanf(STDIN, "%b %d %b", id, index, value);
+				case (id)
+					control.airflowComp.id:
+						control.airflowComp.update_binary(index, value);
+					control.thrustersComp.id:
+						control.thrustersComp.update_binary(index, value);
+					control.solarComp.id:
+						control.solarComp.update_binary(index, value);
+				endcase
+			end
+			"f": begin	// Write Float Value
+				c = $fgetc(STDIN); // Dump space character
+				r = $fscanf(STDIN, "%b %d %d", id, index, value);
+				case (id)
+					control.airflowComp.id:
+						control.airflowComp.update_float(index, value);
+					control.thrustersComp.id:
+						control.thrustersComp.update_float(index, value);
+					control.solarComp.id:
+						control.solarComp.update_float(index, value);
+				endcase
+			end
+			"h": begin // Hacker mode
+				
+			end
+			"t": begin	// Tick Server
 				tick = ~tick;
+			end
 			endcase
 		end else
 			$finish;
@@ -99,7 +102,7 @@ module control;
 		thrusters = 1'b0;
 		solar = 1'b0;
 
-		// Start up
+		// Start all our components up after 100 clock cycles
 		#100 rst = 1'b0;
 		airflow = 1'b1;
 		thrusters = 1'b1;
@@ -112,14 +115,19 @@ endmodule
 // COMPONENTS
 // -----------------------------------------------------------------------------
 
+// Component in charge of managing airflow:
+// Controls vents in each of the rooms on the ISS (inputs)
+// And monitors our supply of oxygen (outputs)
 module airflow(clk, rst, in);
 
-	input clk, rst, in;
-	real oxygen = 198;
-	reg r1 = 1, r2 = 1, r3 = 1, r4 = 1, alert = 0; // r{1-4} are rooms 1-4
+	input clk, rst, in;					// These let the control FSM manage us
+	real oxygen = 198;					// Our oxygen supply
+	reg r1 = 1, r2 = 1, r3 = 1, r4 = 1;	// Whether room vents are open or not
+	reg alert = 0; 						// Whether our oxygen is critically low
 
-	parameter id = 2'b00;
+	parameter id = 2'b00;				// The ID to use to refer to this comp
 
+  	// Send message to client initializing this component
   	initial begin
   		$display("init %b %f %b %b %b %b %b",
 			id,				// %b
@@ -132,9 +140,10 @@ module airflow(clk, rst, in);
   		$fflush;
   	end
 
+  	// Updates a binary value when called by the io module
   	task update_binary;
-  		input integer index;
-  		input reg[63:0] value;
+  		input integer index;	// Which value to update
+  		input reg[63:0] value;	// New value
   		begin
   			case (index)
   				1: r1 = value;
@@ -143,21 +152,23 @@ module airflow(clk, rst, in);
   				4: r4 = value;
   				5: alert = value;
   			endcase
-			update();
+			update();			// Send update message to client
   		end
   	endtask
 
+  	// Updates a float value when called by the io module
 	task update_float;
-		input integer index;
-		input real value;
+		input integer index;	// Which value to update
+		input real value;		// New value
 		begin
 			case (index)
 				0: oxygen = value;
 			endcase
-			update();
+			update();			// Send update message to client
 		end
 	endtask
 
+	// Sends a message to the client with all of our current values
 	task update;
 		begin
 			$display("update %b %f %b %b %b %b %b",
@@ -174,16 +185,20 @@ module airflow(clk, rst, in);
 
 endmodule
 
+// Component in charge of the ISS' thrusters
+// Controls the direction and magnitude of our thrust (inputs)
+// and monitors our rotational velocity and current direction
 module thrusters(clk, rst, in);
 
-	input clk, rst, in;
-	real angle = 1.57079632679;
-	real velocity = 3.14;
-	real thrust = 100;
-	reg [1:0] direction = 2'b00;
+	input clk, rst, in;				// These let the control FSM manage us
+	real angle = 1.57079632679;		// Our current rotation
+	real velocity = 3.14;			// Our rotational velocity
+	real thrust = 100;				// Our current Thrust
+	reg [1:0] direction = 2'b00;	// Our thrusters current direction (e.g. CW)
 
-	parameter id = 2'b01;
+	parameter id = 2'b01;			// The ID to use to refer to this component
 
+  	// Send message to client initializing this component
   	initial begin
   		$display("init %b %f %f %f %b",
 			id,			// %b
@@ -194,30 +209,33 @@ module thrusters(clk, rst, in);
   		$fflush;
   	end
 
+  	// Updates a binary value when called by the io module
   	task update_binary;
-  		input integer index;
-  		input reg[63:0] value;
+  		input integer index;	// Which value to update
+  		input reg[63:0] value;	// New value
   		begin
   			case (index)
   				3: direction = value;
   			endcase
-			update();
+			update();			// Send update message to client
   		end
   	endtask
 
+  	// Updates a float value when called by the io module
 	task update_float;
-		input integer index;
-		input real value;
+		input integer index;	// Which value to update
+		input real value;		// New value
 		begin
 			case (index)
 				0: angle = value;
 				1: velocity = value;
 				2: thrust = value;
 			endcase
-			update();
+			update();			// Send update message to client
 		end
 	endtask
 
+	// Sends a message to the client with all of our current values
 	task update;
 		begin
 			$display("update %b %f %f %f %b", 
@@ -232,23 +250,30 @@ module thrusters(clk, rst, in);
 
 endmodule
 
+// Component in charge of the solar panels
+// Monitors whether the sun is visible or blocked (inputs),
+// and angles the solar panels accordingly (also monitors power gen) (outputs)
 module solar(clk, rst, in);
 
-	input clk, rst, in;
-	wire [`SWIDTH-1:0] state, next;
-	reg [`SWIDTH-1:0] next1;
-	wire [4:0] sun;
-	real angle = 1.57079632679;
-	real power = 0;
+	input clk, rst, in;				// These let the control FSM manage us
+	wire [`SWIDTH-1:0] state, next;	// Our current state, and next cycle's state
+	reg [`SWIDTH-1:0] next1;		// The state we want to go to next cycle
 
-	parameter ANGLE_DELTA = 0.23456789;
-	parameter id = 2'b10;
-	parameter POWER_CONSTANT = 120;
+	wire [4:0] sun;					// Timer for whether we can see the sun
+	real angle = 1.57079632679;		// Our solar panels' current rotation
+	real power = 0;					// How much power is being generated
 
+	parameter id = 2'b10;			// The ID to use to refer to this component
+	parameter ANGLE_DELTA = 0.23456789;	// Solar panels' rotation/cycle
+	parameter POWER_CONSTANT = 120;		// How much our solar panels generate
+
+	// This flips our state from the current state to the next
   	DFF #(`SWIDTH) state_reg(clk, next, state) ;
 
-  	Counter sun_timer(clk, rst, sun) ;
+  	// Constantly ticks up, represents time passing
+  	Counter sun_timer(clk, rst | !in, sun) ;
 
+	// Send message to client initializing this component
   	initial begin
   		$display("init %b %f %f %b",
 			id,		// %b
@@ -258,34 +283,29 @@ module solar(clk, rst, in);
   		$fflush;
   	end
 
+	// Updates a binary value when called by the io module
   	task update_binary;
-  		input integer index;
-  		input reg[63:0] value;
+  		input integer index;	// Which value to update
+  		input reg[63:0] value;	// New value
   		begin
-  			/*
-  			Solar doesn't have any write-able binary values
-			Note that sun is a wire, not a register, so we
-			can't write to it. 
-  			case (index)
-  				2: sun = value;
-  			endcase
-			update();
-  			*/
+  			// No binary registers in this component!
   		end
   	endtask
 
+  	// Updates a binary value when called by the io module
 	task update_float;
-		input integer index;
-		input real value;
+		input integer index;	// Which value to update
+		input real value;		// New value
 		begin
 			case (index)
 				0: angle = value;
 				1: power = value;
 			endcase
-			update();
+			update();			// Send update message to client
 		end
 	endtask
 
+	// Sends a message to the client with all of our current values
 	task update;
 		begin
 			$display("update %b %f %f %b", 
@@ -297,27 +317,43 @@ module solar(clk, rst, in);
 		end
 	endtask
 
+	// The actual state machine
+	// Each cycle it performs this state's actions
 	always @(posedge clk) begin
 		case(state)
-		// no concatenation here, because those don't support reals as operands
+		// no concatenation here, because that don't support reals as operands
 			`S_OFF: begin 
+				// Component is off, so reset our solar panels' angle
+				angle = 1.57079632679;	// Half PI
+				// Component is off, so we can't generate power
 				power = 0;
+				// Next state is dependent on whether we've been enabled or not
 				next1 = in ? `S_A : `S_OFF;
 			end
 			`S_A: begin
+				// Increment our angle so we'll be facing the sun
+				// once we can see it again
 				angle = (angle + ANGLE_DELTA) % 6.28318530718;
+				// We can't see the sun, so we don't generate any power
 				power = 0;
+				// Next state is dependent on whether we can see the sun
 				next1 = sun[4:4] ? `S_B : `S_A;
 			end
 			`S_B: begin
+				// Decrement our angle to continue facing directly at the sun
+				// as we rotate around the earth
 				angle = (angle - ANGLE_DELTA) % 6.28318530718;
+				// We can see the sun, so we generate full power
 				power = POWER_CONSTANT;
+				// Next state is dependent on whether we can see the sun
 				next1 = sun[4:4] ? `S_B : `S_A;
 			end
 		endcase
-		update();
+		update();	// Send update message to client
 	end
 
+	// When rst is true, go to the off state no matter 
+	// what state our FSM told us to go to
 	assign next = rst ? `S_OFF : next1 ;
 
 endmodule
@@ -326,6 +362,7 @@ endmodule
 // UTILITY
 // -----------------------------------------------------------------------------
 
+// D Flip Flop
 module DFF(clk, in, out);
 
 	parameter n=1;
@@ -339,10 +376,11 @@ module DFF(clk, in, out);
 
 endmodule
 
+// Non-Saturated Counter
 module Counter(clk, rst, out) ;
 
-	parameter n=5 ;//Count of 0 to 31
-	input rst, clk ; // reset and clock
+	parameter n=5 ;		// Count of 0 to 31
+	input rst, clk ; 	// reset and clock
 	output [n-1:0] out ;
 	wire [n-1:0] next = rst? 0 : out+1 ;
 
