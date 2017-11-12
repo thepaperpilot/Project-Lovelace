@@ -27,49 +27,49 @@
   <script id="airflow_template" type="text/mustache">
     <p>Oxygen Supply:</p>
     <div class="progress{{alert}}">
-      <div class="bar" style="width: {{float1}}px;"></div>
+      <div class="bar" style="width: {{oxygen}}px;"></div>
     </div>
     <p>Room Vents:</p>
-    <span class="state {{room1}}" onClick="toggleBool(this);" component={{id}} index=0>Living Quarters</span>
-    <span class="state {{room2}}" onClick="toggleBool(this);" component={{id}} index=1>Laboratory</span>
-    <span class="state {{room3}}" onClick="toggleBool(this);" component={{id}} index=2>Lavatory</span>
-    <span class="state {{room4}}" onClick="toggleBool(this);" component={{id}} index=3>Control Room</span>
+    <span class="state {{room1}}" onClick="toggleBool(this);" component={{id}} index=1>Living Quarters</span>
+    <span class="state {{room2}}" onClick="toggleBool(this);" component={{id}} index=2>Laboratory</span>
+    <span class="state {{room3}}" onClick="toggleBool(this);" component={{id}} index=3>Lavatory</span>
+    <span class="state {{room4}}" onClick="toggleBool(this);" component={{id}} index=4>Control Room</span>
   </script>
   <script id="thruster_template" type="text/mustache">
     <br/>
     <div class="compass">
-      <p>Current Angle: {{float1}} radians</p>
+      <p>Current Angle: {{angle}} radians</p>
       <div class="circle">
-        <div class="arrow" style="transform: rotate({{float1}}rad)"></div>
+        <div class="arrow" style="transform: rotate({{angle}}rad)"></div>
         <div class="dot"></div>
       </div>
     </div>
     <br/>
-    <p>Current Angular Velocity: {{float2}} rad/s</p>
-    Current Thrust: <input type="number" value="{{float3}}" step="10" onChange="setFloat(this);" component={{id}} index=3> N <br/>
-    <span class="state {{cw}}" onClick="setState(this);" component={{id}} index=0 width=2 value=00>CW</span>
-    <span class="state {{off}}" onClick="setState(this);" component={{id}} index=0 width=2 value=01>OFF</span>
-    <span class="state {{ccw}}" onClick="setState(this);" component={{id}} index=0 width=2 value=10>CCW</span>
+    <p>Current Angular Velocity: {{velocity}} rad/s</p>
+    Current Thrust: <input type="number" value="{{thrust}}" step="10" onChange="setFloat(this);" component={{id}} index=2> N <br/>
+    <span class="state {{cw}}" onClick="setState(this);" component={{id}} index=3 value=00>CW</span>
+    <span class="state {{off}}" onClick="setState(this);" component={{id}} index=3 value=01>OFF</span>
+    <span class="state {{ccw}}" onClick="setState(this);" component={{id}} index=3 value=10>CCW</span>
   </script>
   <script id="solar_template" type="text/mustache">
     <div style="position: relative;">
     <div class="compass">
-      <p>Current Solar Panel Angle: {{float1}} radians</p>
+      <p id="angle {{id}}">Current Solar Panel Angle: {{angle}} radians</p>
       <div class="circle">
-        <div class="arrow" style="transform: rotate({{float1}}rad)"></div>
+        <div id="arrow {{id}}" class="arrow" style="transform: rotate({{angle}}rad)"></div>
         <div class="dot"></div>
       </div>
     </div>
     <span class="sun{{sun}}">
-      {{time}}
+      <p>{{time}}</p>
       <div class="time">☼</div>
     </span>
     <span class="moon{{sun}}">
-      {{time}}
+      <p>{{time}}</p>
       <div class="time">☽</div>
     </span>
     </div>
-    <p>Current Energy Output: {{float2}} KW</p>
+    <p>Current Energy Output: {{power}} KW</p>
   </script>
   <script src="js/index.js"></script>
 </body>

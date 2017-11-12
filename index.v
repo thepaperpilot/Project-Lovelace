@@ -1,92 +1,19 @@
-`timescale 1ns / 100ps
+// -----------------------------------------------------------------------------
+// GLOBAL DEFINITIONS
+// -----------------------------------------------------------------------------
 
 // FSM stuff
 `define SWIDTH 2
-`define S_OFF 3'b00
-`define S_A   3'b01
-`define S_B   3'b10
-`define S_C   3'b11
+`define S_OFF 2'b00
+`define S_A   2'b01
+`define S_B   2'b10
+`define S_C   2'b11
 
-// Defining our components' parts' positions on their bus
-`define WIDTH 227
-`define id 1:0 // 2 bits for component id (max components: 4)
-`define type 3:2 // 2 bits for component type: 
-				 // [Airflow Control, Thrusters Control, Solar Panel Control]
-`define float1 67:4 // First data float (IEEE Standard)
-`define float2 131:68 // Second data float
-`define float3 195:132 // Third data float
-`define extra 226:195 // Any extra data needed by the component (32 bits)
+// -----------------------------------------------------------------------------
+// CORE
+// -----------------------------------------------------------------------------
 
-// Extra information for Airflow Control
-// float1 is current oxygen supply (of 256)
-// float2 is ignored
-// float3 is ignored
-`define rooms 226:223 // Which rooms have open vents (4 booleans - in a RAM)
-`define alert 222:222 // Whether or not we're sending an alert to the client
-
-// Extra information for Thrusters Control
-// float1 is current ISS angle
-// float2 is current ISS rotational velocity
-// float3 is current thruster... thrust (independent from direction, think
-// of direction as a modifier)
-`define direction 226:225 // Thruster states: [CW, OFF, CCW]
-
-// Extra information for Solar Panel Control
-// float1 is current solar panel angle
-// float2 is current solar panel energy output
-// float3 is ignored
-`define sun 226:226
-
-module components;
-	
-	reg[`WIDTH-1:0] comp1;
-	reg[`WIDTH-1:0] comp2;
-	reg[`WIDTH-1:0] comp3;
-
-	// Sends "init" stdout message for a given component
-	task init;
-		input [`WIDTH-1:0] in;
-		begin
-			$display("init %b %b %f %f %f %b", 
-				in[`id],                    // %b
-				in[`type],                  // %b
-				$bitstoreal(in[`float1]),   // %f
-				$bitstoreal(in[`float2]),   // %f
-				$bitstoreal(in[`float3]),   // %f
-				in[`extra]);                // %b
-			$fflush;
-		end
-	endtask
-
-	initial begin
-		// Thrusters Control Unit
-		comp1[`id] = 2'b00;
-		comp1[`type] = 2'b00;
-		comp1[`rooms] = 4'b1101;
-		comp1[`alert] = 1'b0;
-		comp1[`float1] = $realtobits(198);
-		init(comp1);
-
-		// Thrusters Control Unit
-		comp2[`id] = 2'b01;
-		comp2[`type] = 2'b01;
-		comp2[`direction] = 2'b00;
-		comp2[`float1] = $realtobits(1.57);
-		comp2[`float2] = $realtobits(3.14);
-		comp2[`float3] = $realtobits(100);
-		init(comp2);
-
-		// Solar Panel Control Unit
-		comp3[`id] = 2'b10;
-		comp3[`type] = 2'b10;
-		comp3[`sun] = 1'b1;
-		comp3[`float1] = $realtobits(1.57);
-		comp3[`float2] = $realtobits(120);
-		init(comp3);
-	end
-
-endmodule
-
+// Handles talking between client and server
 module io;
 
 	parameter clk_per = 10;
@@ -94,12 +21,9 @@ module io;
 
 	// TODO this is very specific to the command being "WRITE_DATA".
 	// Find a way to generalize it for any command
-	reg[10*8:0] command; // 10 length string
 	reg[1:0] id; // id of component to perform actions on
-	integer right; // LSB index
-	integer width;
-	integer i;
-	reg[31:0] value;
+	integer index;
+	reg[63:0] value;
 	integer c,r;
 	reg CLK;	// Pretend this is private- don't use it!
 	reg tick;	// Use this one. It ticks based on the server 
@@ -119,76 +43,25 @@ module io;
 			// Read the next command
 			c = $fgetc(STDIN);
 			case (c)
-			"e":	// Write Extra
+			"b":	// Write Binary
 				begin
 					c = $fgetc(STDIN); // Dump space character
-					r = $fscanf(STDIN, "%b %d %d %b", id, right, width, value);
-					if (components.comp1[`id] == id) begin
-						for (i = 0; i < width; i++)
-							components.comp1[right - i] = value[width - 1 - i];
-						$display("update_extra %b %d %d %b", 
-							id, 						// %b
-							right, 						// %d
-							width, 						// %d
-							components.comp1[`extra]);	// %b
-					end else if (components.comp2[`id] == id) begin
-						for (i = 0; i < width; i++) 
-							components.comp2[right - i] = value[width - 1 - i];
-						$display("update_extra %b %d %d %b", 
-							id, 						// %b
-							right, 						// %d
-							width, 						// %d
-							components.comp2[`extra]);	// %b
-					end else if (components.comp3[`id] == id) begin
-						for (i = 0; i < width; i++) 
-							components.comp3[right - i] = value[width - 1 - i];
-						$display("update_extra %b %d %d %b", 
-							id, 						// %b
-							right, 						// %d
-							width, 						// %d
-							components.comp3[`extra]);	// %b
-					end
-					$fflush;
+					r = $fscanf(STDIN, "%b %d %b", id, index, value);
+					case (id)
+						2'b00: control.airflowComp.update_binary(index, value);
+						2'b01: control.thrustersComp.update_binary(index, value);
+						2'b10: control.solarComp.update_binary(index, value);
+					endcase
 				end
 			"f":	// Write Float
 				begin
 					c = $fgetc(STDIN); // Dump space character
-					r = $fscanf(STDIN, "%b %d %d", id, right, value);
-					if (components.comp1[`id] == id)
-						begin
-							case (right)
-							1:
-								components.comp1[`float1] = $realtobits(value);
-							2:
-								components.comp1[`float2] = $realtobits(value);
-							3:
-								components.comp1[`float3] = $realtobits(value);
-							endcase
-						end
-					else if (components.comp2[`id] == id)
-						begin
-							case (right)
-							1:
-								components.comp2[`float1] = $realtobits(value);
-							2:
-								components.comp2[`float2] = $realtobits(value);
-							3:
-								components.comp2[`float3] = $realtobits(value);
-							endcase
-						end
-					else if (components.comp3[`id] == id)
-						begin
-							case (right)
-							1:
-								components.comp3[`float1] = $realtobits(value);
-							2:
-								components.comp3[`float2] = $realtobits(value);
-							3:
-								components.comp3[`float3] = $realtobits(value);
-							endcase
-						end
-					$display("update_float %b %d %d", id, right, value);
-					$fflush;
+					r = $fscanf(STDIN, "%b %d %d", id, index, value);
+					case (id)
+						2'b00: control.airflowComp.update_float(index, value);
+						2'b01: control.thrustersComp.update_float(index, value);
+						2'b10: control.solarComp.update_float(index, value);
+					endcase
 				end
 			"h":
 				// TODO hacker mode state
@@ -201,10 +74,13 @@ module io;
 		
 endmodule
 
+// Handles various components
 module control;
 
-	reg rst;	// Whether or not to reset everything
-	reg solar;	// Whether our solar component is online
+	reg rst;		// Whether or not to reset everything
+	reg airflow;	// Whether our airflow component is online
+	reg thrusters;	// Whether our thrusters component is online
+	reg solar;		// Whether our solar component is online
 
 	// Notice we don't pass anything to it from the solar component
 	// in the components module. That's because of how verilog
@@ -212,73 +88,243 @@ module control;
 	// ended up not really succeeding, because now each logic
 	// module is hardcoded to its own data. Ah well, it would
 	// tke too long to refactor all that at this point
+	airflow airflowComp(io.tick, rst, thrusters);
+	thrusters thrustersComp(io.tick, rst, thrusters);
 	solar solarComp(io.tick, rst, solar);
 
 	initial begin // Start up all our components
+		// Don't activate so everything can reset for a bit
+		rst = 1'b1;
+		airflow = 1'b0;
+		thrusters = 1'b0;
+		solar = 1'b0;
+
+		// Start up
+		#100 rst = 1'b0;
+		airflow = 1'b1;
+		thrusters = 1'b1;
 		solar = 1'b1;
 	end
 
-	//always @ (posedge io.tick) begin
-		//components.comp3[`sun] = ~components.comp3[`sun];
-	//end
+endmodule
+
+// -----------------------------------------------------------------------------
+// COMPONENTS
+// -----------------------------------------------------------------------------
+
+module airflow(clk, rst, in);
+
+	input clk, rst, in;
+	real oxygen = 198;
+	reg r1 = 1, r2 = 1, r3 = 1, r4 = 1, alert = 0; // r{1-4} are rooms 1-4
+
+	parameter id = 2'b00;
+
+  	initial begin
+  		$display("init %b %f %b %b %b %b %b",
+			id,				// %b
+			oxygen, 		// %f
+			r1,				// %b
+			r2,				// %b
+			r3,				// %b
+			r4,				// %b
+			alert);			// %b
+  		$fflush;
+  	end
+
+  	task update_binary;
+  		input integer index;
+  		input reg[63:0] value;
+  		begin
+  			case (index)
+  				1: r1 = value;
+  				2: r2 = value;
+  				3: r3 = value;
+  				4: r4 = value;
+  				5: alert = value;
+  			endcase
+			update();
+  		end
+  	endtask
+
+	task update_float;
+		input integer index;
+		input real value;
+		begin
+			case (index)
+				0: oxygen = value;
+			endcase
+			update();
+		end
+	endtask
+
+	task update;
+		begin
+			$display("update %b %f %b %b %b %b %b",
+				id,				// %b
+				oxygen, 		// %f
+				r1,				// %b
+				r2,				// %b
+				r3,				// %b
+				r4,				// %b
+				alert);			// %b
+			$fflush;
+		end
+	endtask
+
+endmodule
+
+module thrusters(clk, rst, in);
+
+	input clk, rst, in;
+	real angle = 1.57079632679;
+	real velocity = 3.14;
+	real thrust = 100;
+	reg [1:0] direction = 2'b00;
+
+	parameter id = 2'b01;
+
+  	initial begin
+  		$display("init %b %f %f %f %b",
+			id,			// %b
+			angle, 		// %f
+			velocity, 	// %f
+			thrust,		// %f
+			direction);	// %b
+  		$fflush;
+  	end
+
+  	task update_binary;
+  		input integer index;
+  		input reg[63:0] value;
+  		begin
+  			case (index)
+  				3: direction = value;
+  			endcase
+			update();
+  		end
+  	endtask
+
+	task update_float;
+		input integer index;
+		input real value;
+		begin
+			case (index)
+				0: angle = value;
+				1: velocity = value;
+				2: thrust = value;
+			endcase
+			update();
+		end
+	endtask
+
+	task update;
+		begin
+			$display("update %b %f %f %f %b", 
+				id,			// %b
+				angle, 		// %f
+				velocity, 	// %f
+				thrust,		// %f
+				direction);	// %b
+			$fflush;
+		end
+	endtask
 
 endmodule
 
 module solar(clk, rst, in);
+
 	input clk, rst, in;
 	wire [`SWIDTH-1:0] state, next;
 	reg [`SWIDTH-1:0] next1;
+	wire [4:0] sun;
+	real angle = 1.57079632679;
+	real power = 0;
 
-	parameter ANGLE_DELTA = 1.57;
+	parameter ANGLE_DELTA = 0.23456789;
+	parameter id = 2'b10;
+	parameter POWER_CONSTANT = 120;
 
   	DFF #(`SWIDTH) state_reg(clk, next, state) ;
 
-  	// TODO (ethan): instantiate a counter here 
-  	// and use it instead of that always block in control
-  	// that constantly flips sun
+  	Counter sun_timer(clk, rst, sun) ;
+
+  	initial begin
+  		$display("init %b %f %f %b",
+			id,		// %b
+			angle, 	// %f
+			power, 	// %f
+			sun);	// %b
+  		$fflush;
+  	end
+
+  	task update_binary;
+  		input integer index;
+  		input reg[63:0] value;
+  		begin
+  			/*
+  			Solar doesn't have any write-able binary values
+			Note that sun is a wire, not a register, so we
+			can't write to it. 
+  			case (index)
+  				2: sun = value;
+  			endcase
+			update();
+  			*/
+  		end
+  	endtask
+
+	task update_float;
+		input integer index;
+		input real value;
+		begin
+			case (index)
+				0: angle = value;
+				1: power = value;
+			endcase
+			update();
+		end
+	endtask
+
+	task update;
+		begin
+			$display("update %b %f %f %b", 
+				id,		// %b
+				angle, 	// %f
+				power, 	// %f
+				sun);	// %b
+			$fflush;
+		end
+	endtask
 
 	always @(posedge io.tick) begin
 		case(state)
-			`S_OFF: {components.comp3[`float1], 
-				components.comp2[`float1], 
-				next1} =
-					{components.comp3[`float1], 
-						$realtobits(0), 
-						in ? `S_A : `S_OFF};
-			`S_A: {components.comp3[`float1], 
-				components.comp3[`float2], 
-				next1} =
-				  {$realtobits($bitstoreal(components.comp3[`float1])
-				   + ANGLE_DELTA), 
-				   $realtobits(0), 
-				   components.comp3[`sun] ? `S_B : `S_A};
-			`S_B: {components.comp3[`float1], 
-				components.comp3[`float2], 
-				next1} =
-				  {$realtobits($bitstoreal(components.comp3[`float1])
-				   - ANGLE_DELTA), 
-				   $realtobits(120), 
-				   components.comp3[`sun] ? `S_B : `S_A};
+		// no concatenation here, because those don't support reals as operands
+			`S_OFF: begin 
+				power = 0;
+				next1 = in ? `S_A : `S_OFF;
+			end
+			`S_A: begin
+				angle = (angle + ANGLE_DELTA) % 6.28318530718;
+				power = 0;
+				next1 = sun[4:4] ? `S_B : `S_A;
+			end
+			`S_B: begin
+				angle = (angle - ANGLE_DELTA) % 6.28318530718;
+				power = POWER_CONSTANT;
+				next1 = sun[4:4] ? `S_B : `S_A;
+			end
 		endcase
-		$display("update_extra %b %d %d %b", 
-			components.comp3[`id], 						// %b
-			8'd226, 									// %d
-			1'd1, 										// %d
-			components.comp3[`extra]);					// %b
-		$display("update_float %b %d %d", 
-			components.comp3[`id], 						// %b
-			2'd1, 										// %d
-			$bitstoreal(components.comp3[`float1]));	// %d
-		$display("update_float %b %d %d", 
-			components.comp3[`id], 						// %b
-			2'd2, 										// %d
-			$bitstoreal(components.comp3[`float2]));	// %d
-		$fflush;
+		update();
 	end
 
 	assign next = rst ? `S_OFF : next1 ;
 
 endmodule
+
+// -----------------------------------------------------------------------------
+// UTILITY
+// -----------------------------------------------------------------------------
 
 module DFF(clk, in, out);
 
@@ -288,7 +334,18 @@ module DFF(clk, in, out);
 	output[n-1:0] out;
 	reg[n-1:0] out;
 
-	always @(posedge clk)
+	always @(negedge clk)
 		out = in;
+
+endmodule
+
+module Counter(clk, rst, out) ;
+
+	parameter n=5 ;//Count of 0 to 31
+	input rst, clk ; // reset and clock
+	output [n-1:0] out ;
+	wire [n-1:0] next = rst? 0 : out+1 ;
+
+	DFF #(n) count(clk, next, out) ;
 
 endmodule

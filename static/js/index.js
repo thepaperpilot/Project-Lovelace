@@ -35,28 +35,56 @@ let TYPES = {
 	"00": {
 		name: "Airflow Control Unit",
 		class: "airflow",
-		parse: (view, extra) => {
-			view.room1 = extra.slice(0, 1) === "1" ? "active" : "inactive"
-			view.room2 = extra.slice(1, 2) === "1" ? "active" : "inactive"
-			view.room3 = extra.slice(2, 3) === "1" ? "active" : "inactive"
-			view.room4 = extra.slice(3, 4) === "1" ? "active" : "inactive"
-			view.alert = extra.slice(4, 5) === "1" ? " alert" : ""
+		parse: (view, data) => {
+			view.oxygen = data[0]
+			view.room1 = data[1] === "1" ? "active" : "inactive"
+			view.room2 = data[2] === "1" ? "active" : "inactive"
+			view.room3 = data[3] === "1" ? "active" : "inactive"
+			view.room4 = data[4] === "1" ? "active" : "inactive"
+			view.alert = data[5] === "1" ? " alert" : ""
+		},
+		update: (comp, data) => {
+			comp.type.parse(comp.view, data)
+			comp.values = data
 		}
 	},
 	"01": {
 		name: "Thrusters Control Unit",
 		class: "thruster",
-		parse: (view, extra) => {
-			view.cw = extra.slice(0, 2) === "00" ? "active" : ""
-			view.off = extra.slice(0, 2) === "01" ? "active" : ""
-			view.ccw = extra.slice(0, 1) === "1" ? "active" : ""
+		parse: (view, data) => {
+			view.angle = parseFloat(data[0].slice(0, 4))
+			view.velocity = parseFloat(data[1])
+			view.thrust = parseFloat(data[2])
+			let direction = data[3]
+			view.cw = direction === "00" ? "active" : ""
+			view.off = direction === "01" ? "active" : ""
+			view.ccw = direction.slice(0,1) === "1" ? "active" : ""
+		},
+		update: (comp, data) => {
+			comp.type.parse(comp.view, data)
+			comp.values = data
 		}
 	},
 	"10": {
 		name: "Solar Panel Control Unit",
 		class: "solar",
-		parse: (view, extra) => {
-			view.sun = extra.slice(0, 1)
+		parse: (view, data) => {
+			view.angle = parseFloat(data[0].slice(0, 4))
+			view.power = parseFloat(data[1])
+			let sun = data[2]
+			view.sun = sun.slice(0, 1)
+			view.time = 16 - parseInt(sun.slice(1, 5), 2)
+		},
+		update: (comp, data) => {
+			let angle = comp.view.angle
+			comp.type.parse(comp.view, data)
+			comp.view.angle = angle
+			setTimeout(() => {
+				document.getElementById("arrow " + comp.view.id).style.transform = 'rotate(' + data[0] + 'rad)'
+				document.getElementById("angle " + comp.view.id).innerText = 'Current Solar Panel Angle: ' + data[0].slice(0, 4) + ' radians'
+				comp.view.angle = data[0].slice(0, 4)
+			}, 10)
+			comp.values = data
 		}
 	}
 }
@@ -75,54 +103,27 @@ for (let i = 0; i < keys.length; i++) {
 let actions = {
 	init: (values) => {
 		// Construct our view - all the parameters for this component
-		let type = TYPES[values[1]]
+		let type = TYPES[values[0]]
 		let view = {
 			id: values[0],
-			float1: parseFloat(values[2]).toString(),
-			float2: parseFloat(values[3]).toString(),
-			float3: parseFloat(values[4]).toString(),
 			class: type.class,
 			name: type.name
 		}
 		// Add component type specific values
-		type.parse(view, values[5])
+		type.parse(view, values.slice(1))
 
 		components[values[0]] = {
 			view: view,
 			type: type,
-			values: values[5]
+			values: values.slice(1)
 		}
 
 		// Render and display our component card
 		document.body.insertAdjacentHTML('beforeend', compTemplate(view))
 	},
-	update_extra: (values) => {
-		let left = 226 - values[1]
-		let right = left + parseInt(values[2])
+	update: (values) => {
 		let comp = components[values[0]]
-
-		comp.values = comp.values.substring(0, left) + 
-					  values[3].substring(left, right) + 
-					  comp.values.substring(right)
-
-		comp.type.parse(comp.view, comp.values)
-		document.getElementById('comp ' + values[0]).outerHTML = compTemplate(comp.view)
-	},
-	update_float: (values) => {
-		let comp = components[values[0]]
-		switch(values[1]) {
-			case "1":
-				comp.view.float1 = values[2]
-				break;
-			case "2":
-				comp.view.float2 = values[2]
-				break;
-			case "3":
-				comp.view.float3 = values[2]
-				break;
-		}
-
-		comp.type.parse(comp.view, comp.values)
+		comp.type.update(comp, values.slice(1))
 		document.getElementById('comp ' + values[0]).outerHTML = compTemplate(comp.view)
 	}
 }
@@ -165,7 +166,7 @@ So effectively all our clocks will be on the same interval. Keep that in mind. S
 setInterval(() => {
 	appendToLog("t", "stdin")
 	socket.emit("stdin", "t");
-}, 250)
+}, 500)
 
 input.addEventListener('submit', function (e) {
 	e.preventDefault()
@@ -214,8 +215,8 @@ function appendToLog(string, className) {
 function toggleBool(e) { // Toggles a boolean
 	let component = e.getAttribute("component")
 	let index = parseInt(e.getAttribute("index"))
-	let value = components[component].values.slice(index, index + 1) === "1" ? "0" : "1"
-	let message = "e " + component + " " + (226 - index) + " 1 " + value
+	let value = components[component].values[index] === "1" ? "0" : "1"
+	let message = "b " + component + " " + index + " " + value
 	appendToLog(message, "stdin")
 	socket.emit("stdin", message)
 }
@@ -223,9 +224,8 @@ function toggleBool(e) { // Toggles a boolean
 function setState(e) { // Sets a state
 	let component = e.getAttribute("component")
 	let index = e.getAttribute("index")
-	let width = e.getAttribute("width")
 	let value = e.getAttribute("value")
-	let message = "e " + component + " " + (226 - index) + " " + width + " " + value
+	let message = "b " + component + " " + index + " " + value
 	appendToLog(message, "stdin")
 	socket.emit("stdin", message)
 }

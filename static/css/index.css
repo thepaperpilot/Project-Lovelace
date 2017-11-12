@@ -44,7 +44,7 @@ input {
     position: fixed;
     top: 0;
     bottom: 0;
-    z-index: 2;
+    z-index: 1000;
     transition: all ease-in .5s;
     width: 50em;
     font-family: Courier;
