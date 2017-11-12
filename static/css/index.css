@@ -117,8 +117,8 @@ input {
 }
 
 .progress {
-	width: 256px;
-	height: 20px;
+	width: 16ch;
+	height: 1em;
 	overflow: hidden;
 	background: lightgrey;
 }
@@ -316,12 +316,24 @@ input {
 	font-family: "Courier New";
 	background-color: black;
 	box-shadow: none;
-	border-bottom: green solid 1px;
+	padding: 0;
+	margin-bottom: 0;
+}
+
+.hacker .comp:after {
+	content: "--------------------------------------------------------------------------------------------------------------------------------";
+	display: block;
+	overflow-x: hidden;
 }
 
 .hacker .compName {
 	font-size: unset;
 	margin: unset;
+	line-height: unset;
+}
+
+.hacker .hacker-inline {
+	display: inline;
 }
 
 .hacker .action {
@@ -365,6 +377,13 @@ input {
 
 .hacker .progress {
 	background-color: darkgreen;
+	display: inline-block;
+	vertical-align: middle;
+}
+
+.hacker .hacker-inline:before {
+	content: "";
+	display: block;
 }
 
 .hacker .bar {
@@ -377,21 +396,13 @@ input {
 	background: none;
 }
 
-.hacker .state.toggle {
-	border: solid 2px green;
-	background: green;
-}
-
-.hacker .state.active:not(.toggle) {
-	text-decoration: underline;
-}
-
 .hacker .state.inactive {
 	background-color: black;
 }
 
 .hacker .compass {
 	width: unset;
+	margin: 0;
 }
 
 .hacker .circle {
@@ -411,6 +422,22 @@ input {
     color: lightgreen;
     border: none;
     border-bottom: 1px solid lightgreen;
+    margin: 0;
+    width: 16ch;
+    font-family: Courier New;
+}
+
+.hacker input[type='number'] {
+    -moz-appearance:textfield;
+}
+
+.hacker input::-webkit-outer-spin-button,
+.hacker input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+.hacker p {
+	margin: 0;
 }
 
 .hacker .progress.alert {
@@ -426,9 +453,10 @@ input {
 .hacker .progress.alert:after {
 	content: "!";
 	position: absolute;
-	right: -1em;
+	right: -2ch;
 	bottom: 0;
 	color: lightgreen;
+	line-height: 1em;
 }
 
 .hacker .sun1, .hacker .moon0 {

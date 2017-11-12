@@ -121,7 +121,7 @@ endmodule
 module airflow(clk, rst, in);
 
 	input clk, rst, in;					// These let the control FSM manage us
-	real oxygen = 198;					// Our oxygen supply
+	real oxygen = 198;					// Our oxygen supply (client max: 256)
 	reg r1 = 1, r2 = 1, r3 = 1, r4 = 1;	// Whether room vents are open or not
 	reg alert = 0; 						// Whether our oxygen is critically low
 

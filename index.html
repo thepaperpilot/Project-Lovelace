@@ -25,15 +25,15 @@
     </div>
   </script>
   <script id="airflow_template" type="text/mustache">
-    <p>Oxygen Supply:</p>
+    <p class="hacker-inline">Oxygen Supply:</p>
     <div class="progress{{alert}}">
-      <div class="bar" style="width: {{oxygen}}px;"></div>
+      <div class="bar" style="width: calc({{oxygen}} / 256 * 16ch);"></div>
     </div>
-    <p>Room Vents:</p>
-    <span class="state toggle {{room1}}" onClick="toggleBool(this);" component={{id}} index=1>Living Quarters</span>
-    <span class="state toggle {{room2}}" onClick="toggleBool(this);" component={{id}} index=2>Laboratory</span>
-    <span class="state toggle {{room3}}" onClick="toggleBool(this);" component={{id}} index=3>Lavatory</span>
-    <span class="state toggle {{room4}}" onClick="toggleBool(this);" component={{id}} index=4>Library</span>
+    <p class="hacker-inline">Room Vents:</p>
+    <span class="state {{room1}}" onClick="toggleBool(this);" component={{id}} index=1>Living Quarters</span>
+    <span class="state {{room2}}" onClick="toggleBool(this);" component={{id}} index=2>Laboratory</span>
+    <span class="state {{room3}}" onClick="toggleBool(this);" component={{id}} index=3>Lavatory</span>
+    <span class="state {{room4}}" onClick="toggleBool(this);" component={{id}} index=4>Library</span>
   </script>
   <script id="thruster_template" type="text/mustache">
     <br/>
