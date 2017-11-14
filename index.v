@@ -24,7 +24,7 @@ module io;
 	reg[63:0] value;	// For some commands, value to change a variable to
 	integer c,r;		// For reading commands
 	reg CLK;			// Pretend this is private- don't use it!
-	reg tick;			// Use this one. It ticks based on the server 
+	reg tick;			// Use this one. It ticks based on the server
 
 	// This creates our clock. CLK will get inverted every (clk_per/2) cycles
 	initial begin
@@ -66,7 +66,7 @@ module io;
 				endcase
 			end
 			"h": begin // Hacker mode
-				
+
 			end
 			"t": begin	// Tick Server
 				tick = ~tick;
@@ -74,7 +74,7 @@ module io;
 			endcase
 		end else
 			$finish;
-		
+
 endmodule
 
 // Handles various components
@@ -121,11 +121,14 @@ endmodule
 module airflow(clk, rst, in);
 
 	input clk, rst, in;					// These let the control FSM manage us
-	real oxygen = 198;					// Our oxygen supply (client max: 256)
+	real oxygen;
 	reg r1 = 1, r2 = 1, r3 = 1, r4 = 1;	// Whether room vents are open or not
 	reg alert = 0; 						// Whether our oxygen is critically low
-
+    wire [`SWIDTH-1:0] state, next; // Our current state, and next cycle's state
+    reg [`SWIDTH-1:0] next1;        // The state we want to go to next cycle
 	parameter id = 2'b00;				// The ID to use to refer to this comp
+    // This flips our state from the current state to the next
+    DFF #(`SWIDTH) state_reg(clk, next, state) ;
 
   	// Send message to client initializing this component
   	initial begin
@@ -183,6 +186,32 @@ module airflow(clk, rst, in);
 		end
 	endtask
 
+    always @ (posedge clk)
+        begin
+            case(state)
+            // no concatenation here, because that don't support reals as operands
+                `S_OFF: begin
+                    // Our oxygen supply (client max: 256)
+                    oxygen = 198;
+                    alert = 0;
+                    next1 = `S_A;
+                end
+                `S_A: begin
+                    // Decrease oxygen supply
+                    oxygen = oxygen - 20;
+                    next1 = oxygen <= 50 ? `S_B : `S_A;
+                end
+                `S_B: begin
+                    alert = 1;
+                    oxygen = oxygen - 1;
+                    next1 = oxygen <= 0 ? `S_OFF : `S_B;
+                end
+            endcase
+            update();   // Send update message to client
+        end
+    // When rst is true, go to the off state no matter
+    // what state our FSM told us to go to
+    assign next = rst ? `S_OFF : next1 ;
 endmodule
 
 // Component in charge of the ISS' thrusters
@@ -238,7 +267,7 @@ module thrusters(clk, rst, in);
 	// Sends a message to the client with all of our current values
 	task update;
 		begin
-			$display("update %b %f %f %f %b", 
+			$display("update %b %f %f %f %b",
 				id,			// %b
 				angle, 		// %f
 				velocity, 	// %f
@@ -308,7 +337,7 @@ module solar(clk, rst, in);
 	// Sends a message to the client with all of our current values
 	task update;
 		begin
-			$display("update %b %f %f %b", 
+			$display("update %b %f %f %b",
 				id,		// %b
 				angle, 	// %f
 				power, 	// %f
@@ -322,7 +351,7 @@ module solar(clk, rst, in);
 	always @(posedge clk) begin
 		case(state)
 		// no concatenation here, because that don't support reals as operands
-			`S_OFF: begin 
+			`S_OFF: begin
 				// Component is off, so reset our solar panels' angle
 				angle = 1.57079632679;	// Half PI
 				// Component is off, so we can't generate power
@@ -352,7 +381,7 @@ module solar(clk, rst, in);
 		update();	// Send update message to client
 	end
 
-	// When rst is true, go to the off state no matter 
+	// When rst is true, go to the off state no matter
 	// what state our FSM told us to go to
 	assign next = rst ? `S_OFF : next1 ;
 
