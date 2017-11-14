@@ -21,27 +21,29 @@ module Mux4(a3, a2, a1, a0, s, b) ;
 endmodule // Mux4
 
 
-module Thrusters(clk, rst, up, down, thrust, out) ;
+module Thrusters(clk, rst, up, down, thrust, velocity, angle) ;
   parameter n = 4 ;
   input clk, rst, up, down ;
   input [n-1:0] thrust ;
-  output [n-1:0] out ;
-  wire [n-1:0] next, outpm1 ;
+  output [n-1:0] velocity, angle;
+  wire [n-1:0] nextVelocity, nextAngle, outpm1 ;
 
-  DFF #(n) count(clk, next, out) ;
+  DFF #(n) countVelocity(clk, nextVelocity, velocity) ;
+  DFF #(n) countAngle(clk, nextAngle, angle) ;
 
 
-  //assign outpm1 = out + {{n-1{down}},1'b1} ;//IF DOWN
+  //assign outpm1 = velocity + {{n-1{down}},1'b1} ;//IF DOWN
 
-  assign outpm1 = up ? out + thrust : out - thrust;
+  assign outpm1 = up ? velocity + thrust : velocity - thrust;
 
-  Mux4 #(n) mux(out, thrust, outpm1,
+  Mux4 #(n) mux(velocity, thrust, outpm1,
 		{n{1'b0}},//A ZERO
                 {(~rst & ~up & ~down),//ALL OFF
                  (1'b0),//thrust
                  (~rst & (up | down)),//UP OR DOWN
                    rst}, //RESET
-                  next) ;//OUTPUT
+                  nextVelocity) ;//OUTPUT
+  assign nextAngle = rst ? 4'b0000 : angle + nextVelocity;
 endmodule
 
 //==================================
@@ -49,19 +51,19 @@ module TestBench ;
   reg clk, rst, up, down ;
   parameter n=4;
   reg [n-1:0] thrust;
-  wire [n-1:0] out;
+  wire [n-1:0] velocity, angle;
 
 
- Thrusters thruster(clk,rst,up,down,thrust,out);
+ Thrusters thruster(clk,rst,up,down,thrust,velocity,angle);
 
 
   initial begin
     clk = 1 ; #5 clk = 0 ;
-	    $display("CW|CCW|Thrust|Velocity");
-	    $display("--+---+------+--------");
+	    $display("CW|CCW|Thrust|Velocity|Angle");
+	    $display("--+---+------+--------|-----");
     forever
       begin
-        $display(" %b|  %b|     %d|     %d",up,down,thrust,out ) ;
+        $display(" %b|  %b|     %d|     %d|   %d",up,down,thrust,velocity,angle ) ;
         #5 clk = 1 ;
 
 		#5 clk = 0 ;
