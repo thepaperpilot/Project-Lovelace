@@ -22,7 +22,8 @@ endmodule // Mux4
 
 
 module Thrusters(clk, rst, up, down, thrust, velocity, angle) ;
-  parameter n = 4 ;
+  parameter n = 9 ;
+  parameter newtonsPerRPS = 100;
   input clk, rst, up, down ;
   input [n-1:0] thrust ;
   output [n-1:0] velocity, angle;
@@ -34,7 +35,8 @@ module Thrusters(clk, rst, up, down, thrust, velocity, angle) ;
 
   //assign outpm1 = velocity + {{n-1{down}},1'b1} ;//IF DOWN
 
-  assign outpm1 = up ? velocity + thrust : velocity - thrust;
+  assign outpm1 = up ? velocity + thrust / newtonsPerRPS : velocity - thrust / newtonsPerRPS;
+  //100 unit of thrust results in 1 unit of rotation.
 
   Mux4 #(n) mux(velocity, thrust, outpm1,
 		{n{1'b0}},//A ZERO
@@ -49,7 +51,7 @@ endmodule
 //==================================
 module TestBench ;
   reg clk, rst, up, down ;
-  parameter n=4;
+  parameter n=9;
   reg [n-1:0] thrust;
   wire [n-1:0] velocity, angle;
 
@@ -74,12 +76,12 @@ module TestBench ;
   initial begin
     rst=0;up=0;down=0;thrust=4'b0000;
     #10 $display("RESET");
-        rst = 1 ;up=0;down=0;thrust=4'b0011;
-    #10 rst = 0 ;up=0;down=0;thrust=4'b0011;
-    #10 rst = 0 ;up=1;down=0;thrust=4'b0011;
-    #50 rst = 0 ;up=0;down=0;thrust=4'b0011;
-    #10 rst = 0 ;up=0;down=1;thrust=4'b0011;
-    #50 rst = 0 ;up=0;down=0;thrust=4'b0011;
+        rst = 1 ;up=0;down=0;thrust=9'b011000011;
+    #10 rst = 0 ;up=0;down=0;thrust=9'b011000011;
+    #10 rst = 0 ;up=1;down=0;thrust=9'b011000011;
+    #50 rst = 0 ;up=0;down=0;thrust=9'b011000011;
+    #10 rst = 0 ;up=0;down=1;thrust=9'b011000011;
+    #50 rst = 0 ;up=0;down=0;thrust=9'b011000011;
     #50
     $stop;
   end
