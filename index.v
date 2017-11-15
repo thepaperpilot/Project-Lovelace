@@ -196,12 +196,15 @@ module thrusters(clk, rst, in);
 	input clk, rst, in;				// These let the control FSM manage us
 	wire [`SWIDTH-1:0] state, next;	// Our current state, and next cycle's state
 	reg [`SWIDTH-1:0] next1;
-	real angle = 1.57079632679;		// Our current rotation
-	real velocity = 3.14;			// Our rotational velocity
+	real velocity = 0;			// Our rotational velocity
+	real angle = 0;		// Our solar panels' current rotation
 	real thrust = 100;				// Our current Thrust
 	reg [1:0] direction = 2'b00;	// Our thrusters current direction (e.g. CW)
 
 	parameter id = 2'b01;			// The ID to use to refer to this component
+	
+	// This flips our state from the current state to the next
+  	DFF #(`SWIDTH) state_reg(clk, next, state) ;
 
   	// Send message to client initializing this component
   	initial begin
@@ -257,32 +260,58 @@ module thrusters(clk, rst, in);
 		case(state)
 		// no concatenation here, because that don't support reals as operands
 			`S2_OFF: begin
-				// Component is off, so velocity remains the same
+				// Component is off, so thrust is 0
+				thrust = 0;
+				
+				angle = (angle + velocity) % 6.28318530718;
 				// Next state is dependent on whether we've been enabled or not
-				next1 = in ? `S2_OFF : `S2_OFF; //change to nogo
+				next1 = in ? `S2_NOGO : `S2_OFF;
+			end
+			`S2_NOGO: begin
+				// Going neither clockwise, nor countclockwise so thrust is 0
+				thrust = 0;
+				
+				angle = (angle + velocity) % 6.28318530718;
+				
+				if(direction == 2'b00) // Move this into a function or rewrite in some way?
+					next1 = `S2_NOGO;
+				else if(direction == 2'b01)
+					next1 = `S2_CW;
+				else
+					next1 = `S2_CCW;
 			end
 			`S2_CW: begin
-				// Increment our angle so we'll be facing the sun
-				// once we can see it again
-				//angle = (angle + ANGLE_DELTA) % 6.28318530718;
-				// We can't see the sun, so we don't generate any power
-				//power = 0;
-				// Next state is dependent on whether we can see the sun
-				//next1 = sun[4:4] ? `S_B : `S_A;
+				// Thrust is in Clockwise direction, add thrust to velocity
+				velocity = velocity + thrust;
+				
+				angle = (angle + velocity) % 6.28318530718;	
+				
+				if(direction == 2'b00)
+					next1 = `S2_NOGO;
+				else if(direction == 2'b01)
+					next1 = `S2_CW;
+				else
+					next1 = `S2_CCW;
 			end
 			`S2_CCW: begin
-				// Decrement our angle to continue facing directly at the sun
-				// as we rotate around the earth
-				//angle = (angle - ANGLE_DELTA) % 6.28318530718;
-				// We can see the sun, so we generate full power
-				//power = POWER_CONSTANT;
-				// Next state is dependent on whether we can see the sun
-				//next1 = sun[4:4] ? `S_B : `S_A;
+				// Thrust is in Counter-clockwise direction, subtract thrust from velocity
+				velocity = velocity - thrust;
+				
+				angle = (angle + velocity) % 6.28318530718;	
+				
+				if(direction == 2'b00)
+					next1 = `S2_NOGO;
+				else if(direction == 2'b01)
+					next1 = `S2_CW;
+				else
+					next1 = `S2_CCW;
 			end
 		endcase
 		update();	// Send update message to client
 	end
-
+	
+	assign next = rst ? `S2_OFF : next1 ;
+	
 endmodule
 
 // Component in charge of the solar panels
