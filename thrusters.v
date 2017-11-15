@@ -22,8 +22,8 @@ endmodule // Mux4
 
 
 module Thrusters(clk, rst, up, down, thrust, velocity, angle) ;
-  parameter n = 9 ;
-  parameter newtonsPerRPS = 100;
+  parameter n = 16 ;
+  //parameter newtonsPerRPS = 100;
   input clk, rst, up, down ;
   input [n-1:0] thrust ;
   output [n-1:0] velocity, angle;
@@ -35,7 +35,7 @@ module Thrusters(clk, rst, up, down, thrust, velocity, angle) ;
 
   //assign outpm1 = velocity + {{n-1{down}},1'b1} ;//IF DOWN
 
-  assign outpm1 = up ? velocity + thrust / newtonsPerRPS : velocity - thrust / newtonsPerRPS;
+  assign outpm1 = up ? velocity + thrust : velocity - thrust;
   //100 unit of thrust results in 1 unit of rotation.
 
   Mux4 #(n) mux(velocity, thrust, outpm1,
@@ -45,15 +45,16 @@ module Thrusters(clk, rst, up, down, thrust, velocity, angle) ;
                  (~rst & (up | down)),//UP OR DOWN
                    rst}, //RESET
                   nextVelocity) ;//OUTPUT
-  assign nextAngle = rst ? 4'b0000 : angle + nextVelocity;
+  assign nextAngle = rst ? 4'b0000 : (angle + nextVelocity) % 360;
 endmodule
 
 //==================================
 module TestBench ;
   reg clk, rst, up, down ;
-  parameter n=9;
+  parameter n=16;
   reg [n-1:0] thrust;
   wire [n-1:0] velocity, angle;
+  reg real angleInRadians;
 
 
  Thrusters thruster(clk,rst,up,down,thrust,velocity,angle);
@@ -61,11 +62,13 @@ module TestBench ;
 
   initial begin
     clk = 1 ; #5 clk = 0 ;
+    angleInRadians = angle * 3.14 / 180;
 	    $display("CW|CCW|Thrust|Velocity|Angle");
 	    $display("--+---+------+--------|-----");
     forever
       begin
-        $display(" %b|  %b|     %d|     %d|   %d",up,down,thrust,velocity,angle ) ;
+        angleInRadians = angle * 3.14 / 180;
+        $display(" %b|  %b|     %d|     %d|   %f",up,down,thrust,velocity,angleInRadians ) ;
         #5 clk = 1 ;
 
 		#5 clk = 0 ;
@@ -74,14 +77,14 @@ module TestBench ;
 
   // input stimuli
   initial begin
-    rst=0;up=0;down=0;thrust=4'b0000;
+    rst=0;up=0;down=0;thrust=16'b0000000000000000;
     #10 $display("RESET");
-        rst = 1 ;up=0;down=0;thrust=9'b011000011;
-    #10 rst = 0 ;up=0;down=0;thrust=9'b011000011;
-    #10 rst = 0 ;up=1;down=0;thrust=9'b011000011;
-    #50 rst = 0 ;up=0;down=0;thrust=9'b011000011;
-    #10 rst = 0 ;up=0;down=1;thrust=9'b011000011;
-    #50 rst = 0 ;up=0;down=0;thrust=9'b011000011;
+        rst = 1 ;up=0;down=0;thrust=16'b0000000011000011;
+    #10 rst = 0 ;up=0;down=0;thrust=16'b0000000011000011;
+    #10 rst = 0 ;up=1;down=0;thrust=16'b0000000011000011;
+    #50 rst = 0 ;up=0;down=0;thrust=16'b0000000011000011;
+    #10 rst = 0 ;up=0;down=1;thrust=16'b0000000011000011;
+    #50 rst = 0 ;up=0;down=0;thrust=16'b0000000011000011;
     #50
     $stop;
   end
