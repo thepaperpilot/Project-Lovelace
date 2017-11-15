@@ -3,12 +3,15 @@
 // -----------------------------------------------------------------------------
 
 // FSM stuff
-`define SWIDTH 2	// Number of bits needed to represent our current state
-`define S_OFF 2'b00	// State when component is turned off
-`define S_A   2'b01
-`define S_B   2'b10
-`define S_C   2'b11
-
+`define SWIDTH 3	// Number of bits needed to represent our current state
+`define S_OFF 3'b000	// State when component is turned off
+`define S_A   3'b001
+`define S_B   3'b010
+`define S_C   3'b011
+`define S2_CW   3'b100
+`define S2_CCW  3'b101
+`define S2_NOGO 3'b110
+`define S2_OFF   3'b111
 // -----------------------------------------------------------------------------
 // CORE
 // -----------------------------------------------------------------------------
@@ -24,7 +27,7 @@ module io;
 	reg[63:0] value;	// For some commands, value to change a variable to
 	integer c,r;		// For reading commands
 	reg CLK;			// Pretend this is private- don't use it!
-	reg tick;			// Use this one. It ticks based on the server 
+	reg tick;			// Use this one. It ticks based on the server
 
 	// This creates our clock. CLK will get inverted every (clk_per/2) cycles
 	initial begin
@@ -66,7 +69,7 @@ module io;
 				endcase
 			end
 			"h": begin // Hacker mode
-				
+
 			end
 			"t": begin	// Tick Server
 				tick = ~tick;
@@ -74,7 +77,7 @@ module io;
 			endcase
 		end else
 			$finish;
-		
+
 endmodule
 
 // Handles various components
@@ -191,6 +194,8 @@ endmodule
 module thrusters(clk, rst, in);
 
 	input clk, rst, in;				// These let the control FSM manage us
+	wire [`SWIDTH-1:0] state, next;	// Our current state, and next cycle's state
+	reg [`SWIDTH-1:0] next1;
 	real angle = 1.57079632679;		// Our current rotation
 	real velocity = 3.14;			// Our rotational velocity
 	real thrust = 100;				// Our current Thrust
@@ -238,7 +243,7 @@ module thrusters(clk, rst, in);
 	// Sends a message to the client with all of our current values
 	task update;
 		begin
-			$display("update %b %f %f %f %b", 
+			$display("update %b %f %f %f %b",
 				id,			// %b
 				angle, 		// %f
 				velocity, 	// %f
@@ -247,6 +252,36 @@ module thrusters(clk, rst, in);
 			$fflush;
 		end
 	endtask
+
+	always @(posedge clk) begin
+		case(state)
+		// no concatenation here, because that don't support reals as operands
+			`S2_OFF: begin
+				// Component is off, so velocity remains the same
+				// Next state is dependent on whether we've been enabled or not
+				next1 = in ? `S2_OFF : `S2_OFF; //change to nogo
+			end
+			`S2_CW: begin
+				// Increment our angle so we'll be facing the sun
+				// once we can see it again
+				//angle = (angle + ANGLE_DELTA) % 6.28318530718;
+				// We can't see the sun, so we don't generate any power
+				//power = 0;
+				// Next state is dependent on whether we can see the sun
+				//next1 = sun[4:4] ? `S_B : `S_A;
+			end
+			`S2_CCW: begin
+				// Decrement our angle to continue facing directly at the sun
+				// as we rotate around the earth
+				//angle = (angle - ANGLE_DELTA) % 6.28318530718;
+				// We can see the sun, so we generate full power
+				//power = POWER_CONSTANT;
+				// Next state is dependent on whether we can see the sun
+				//next1 = sun[4:4] ? `S_B : `S_A;
+			end
+		endcase
+		update();	// Send update message to client
+	end
 
 endmodule
 
@@ -308,7 +343,7 @@ module solar(clk, rst, in);
 	// Sends a message to the client with all of our current values
 	task update;
 		begin
-			$display("update %b %f %f %b", 
+			$display("update %b %f %f %b",
 				id,		// %b
 				angle, 	// %f
 				power, 	// %f
@@ -322,7 +357,7 @@ module solar(clk, rst, in);
 	always @(posedge clk) begin
 		case(state)
 		// no concatenation here, because that don't support reals as operands
-			`S_OFF: begin 
+			`S_OFF: begin
 				// Component is off, so reset our solar panels' angle
 				angle = 1.57079632679;	// Half PI
 				// Component is off, so we can't generate power
@@ -352,7 +387,7 @@ module solar(clk, rst, in);
 		update();	// Send update message to client
 	end
 
-	// When rst is true, go to the off state no matter 
+	// When rst is true, go to the off state no matter
 	// what state our FSM told us to go to
 	assign next = rst ? `S_OFF : next1 ;
 
