@@ -52,6 +52,27 @@ input {
     left: 0;
 }
 
+.room {
+	display: inline-table;
+    width: 100px;
+    height: 100px;
+    text-align: center;
+	border: solid 2px black;
+    padding: 0 8px;
+    cursor: pointer;
+    vertical-align: middle;
+	margin-right: -5px;
+}
+
+.room p {
+	display: table-cell;
+	vertical-align: middle;
+}
+
+.room.inactive {
+	background: red;
+}
+
 .state {
 	border: solid 2px black;
     padding: 0 8px;
@@ -59,12 +80,8 @@ input {
     cursor: pointer;
 }
 
-.state.active {
+.state.active, .room.active {
 	background: green;
-}
-
-.state.inactive {
-	background: red;
 }
 
 .compass {
@@ -336,15 +353,6 @@ input {
 	display: inline;
 }
 
-.hacker .action {
-	color: green;
-	text-decoration: underline;
-}
-
-.hacker .action:hover {
-	color: lightgreen;
-}
-
 .hacker .panel {
 	background-color: black;
 	color: green;
@@ -390,14 +398,47 @@ input {
 	background-color: green;
 }
 
+.hacker .room {
+	width: unset;
+	height: unset;
+	border: none;
+	padding: 0;
+	margin: 0;
+	background: none;
+	color: lightgreen;
+}
+
+.hacker .hacker-invisible {
+	display: none;
+}
+
+.hacker .room::before {
+	content: "|";
+	padding-right: 1ch;
+	color: green;
+	cursor: unset;
+	text-decoration: none;
+}
+
+.hacker .room:first-child:before {
+	content: "";
+	padding: 0;
+}
+
+.hacker .room p {
+	vertical-align: unset;
+}
+
 .hacker .state {
 	border: none;
 	color: lightgreen;
 	background: none;
+	padding: 0;
+	margin: 0;
 }
 
-.hacker .state.inactive {
-	background-color: black;
+.hacker .state.active, .hacker .room.active {
+	text-decoration: underline;
 }
 
 .hacker .compass {

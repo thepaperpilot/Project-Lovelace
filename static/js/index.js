@@ -61,8 +61,23 @@ let TYPES = {
 			view.ccw = direction.slice(0,1) === "1" ? "active" : ""
 		},
 		update: (comp, data) => {
+			let thrustComponent = document.getElementById("thrust " + comp.view.id)
+			let focused = false
+			if (document.activeElement == thrustComponent) {
+				focused = true
+			}
+			let angle = comp.view.angle
 			comp.type.parse(comp.view, data)
+			comp.view.angle = angle
+			setTimeout(() => {
+				document.getElementById("arrow " + comp.view.id).style.transform = 'scaleY(-1) rotate(' + data[0] + 'rad)'
+				document.getElementById("angle " + comp.view.id).innerText = 'Current Angle: ' + data[0].slice(0, 4) + ' radians'
+				comp.view.angle = data[0].slice(0, 4)
+			}, 10)
 			comp.values = data
+			if (focused) {
+				requestAnimationFrame(() => {document.getElementById("thrust " + comp.view.id).focus()})
+			}
 		}
 	},
 	"10": {
@@ -81,7 +96,7 @@ let TYPES = {
 			comp.view.angle = angle
 			setTimeout(() => {
 				document.getElementById("arrow " + comp.view.id).style.transform = 'scaleY(-1) rotate(' + data[0] + 'rad)'
-				document.getElementById("angle " + comp.view.id).innerText = 'Current Solar Panel Angle: ' + data[0].slice(0, 4) + ' radians'
+				document.getElementById("solar_angle " + comp.view.id).innerText = 'Current Solar Panel Angle: ' + data[0].slice(0, 4) + ' radians'
 				comp.view.angle = data[0].slice(0, 4)
 			}, 10)
 			comp.values = data

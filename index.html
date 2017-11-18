@@ -30,23 +30,25 @@
       <div class="bar" style="width: calc({{oxygen}} / 256 * 16ch);"></div>
     </div>
     <p class="hacker-inline">Room Vents:</p>
-    <span class="state {{room1}}" onClick="toggleBool(this);" component={{id}} index=1>Living Quarters</span>
-    <span class="state {{room2}}" onClick="toggleBool(this);" component={{id}} index=2>Laboratory</span>
-    <span class="state {{room3}}" onClick="toggleBool(this);" component={{id}} index=3>Lavatory</span>
-    <span class="state {{room4}}" onClick="toggleBool(this);" component={{id}} index=4>Library</span>
+    <span>
+      <span class="room {{room1}}" onClick="toggleBool(this);" component={{id}} index=1><p>Living Quarters</p></span>
+      <span class="room {{room2}}" onClick="toggleBool(this);" component={{id}} index=2><p>Laboratory</p></span><br class="hacker-invisible">
+      <span class="room {{room3}}" onClick="toggleBool(this);" component={{id}} index=3><p>Lavatory</p></span>
+      <span class="room {{room4}}" onClick="toggleBool(this);" component={{id}} index=4><p>Library</p></span>
+    </span>
   </script>
   <script id="thruster_template" type="text/mustache">
     <br/>
     <div class="compass">
-      <p>Current Angle: {{angle}} radians</p>
+      <p id="angle {{id}}">Current Angle: {{angle}} radians</p>
       <div class="circle">
-        <div class="arrow" style="transform: scaleY(-1) rotate({{angle}}rad)"></div>
+        <div id="arrow {{id}}" class="arrow" style="transform: scaleY(-1) rotate({{angle}}rad)"></div>
         <div class="dot"></div>
       </div>
     </div>
     <br/>
     <p>Current Angular Velocity: {{velocity}} rad/s</p>
-    Current Thrust: <input type="number" value="{{thrust}}" step="10" onChange="setFloat(this);" component={{id}} index=2> N <br/>
+    Current Thrust: <input id="thrust {{id}}" type="number" value="{{thrust}}" step="100" onInput="setFloat(this);" component={{id}} index=2> N <br/>
     <span class="state {{cw}}" onClick="setState(this);" component={{id}} index=3 value=00>CW</span>
     <span class="state {{off}}" onClick="setState(this);" component={{id}} index=3 value=01>OFF</span>
     <span class="state {{ccw}}" onClick="setState(this);" component={{id}} index=3 value=10>CCW</span>
@@ -54,7 +56,7 @@
   <script id="solar_template" type="text/mustache">
     <div style="position: relative;">
     <div class="compass">
-      <p id="angle {{id}}">Current Solar Panel Angle: {{angle}} radians</p>
+      <p id="solar_angle {{id}}">Current Solar Panel Angle: {{angle}} radians</p>
       <div class="circle">
         <div id="arrow {{id}}" class="arrow" style="transform: scaleY(-1) rotate({{angle}}rad)"></div>
         <div class="dot"></div>

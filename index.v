@@ -303,35 +303,35 @@ module thrusters(clk, rst, in);
 				angle = (angle + velocity) % 6.28318530718;
 				
 				if(direction == 2'b00) // Move this into a function or rewrite in some way?
-					next1 = `S2_NOGO;
-				else if(direction == 2'b01)
 					next1 = `S2_CW;
+				else if(direction == 2'b01)
+					next1 = `S2_OFF;
 				else
 					next1 = `S2_CCW;
 			end
 			`S2_CW: begin
 				// Thrust is in Clockwise direction, add thrust to velocity
-				velocity = velocity + thrust;
+				velocity = velocity + thrust / 1000000;
 				
 				angle = (angle + velocity) % 6.28318530718;	
 				
 				if(direction == 2'b00)
-					next1 = `S2_NOGO;
-				else if(direction == 2'b01)
 					next1 = `S2_CW;
+				else if(direction == 2'b01)
+					next1 = `S2_NOGO;
 				else
 					next1 = `S2_CCW;
 			end
 			`S2_CCW: begin
 				// Thrust is in Counter-clockwise direction, subtract thrust from velocity
-				velocity = velocity - thrust;
+				velocity = velocity - thrust / 1000000;
 				
 				angle = (angle + velocity) % 6.28318530718;	
 				
 				if(direction == 2'b00)
-					next1 = `S2_NOGO;
-				else if(direction == 2'b01)
 					next1 = `S2_CW;
+				else if(direction == 2'b01)
+					next1 = `S2_NOGO;
 				else
 					next1 = `S2_CCW;
 			end
